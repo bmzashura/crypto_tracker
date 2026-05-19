@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}About - CryptoTracker{% endblock %}
+
+{% block content %}
+<div class="about-content">
+    <h1>About CryptoTracker</h1>
+
+    <h2>Tema Website</h2>
+    <p>CryptoTracker adalah website monitoring harga cryptocurrency berbasis Flask yang mengintegrasikan data real-time dari CoinGecko API. Website ini dirancang dengan desain terinspirasi dari Kraken Exchange menggunakan sistem warna ungu dan hijau khas fintech crypto.</p>
+
+    <h2>API yang Digunakan</h2>
+    <p><strong>CoinGecko API</strong> — Gratis, reliable, dan menyediakan data untuk 18,000+ cryptocurrency dari 1,000+ exchange.</p>
+    <ul>
+        <li>Free tier: 10,000 calls/month</li>
+        <li>Data: Price, Market Cap, Volume, Supply, ATH/ATL, dll</li>
+        <li>No authentication required (public endpoints)</li>
+    </ul>
+
+    <h2>Cara Kerja Pengambilan Data API</h2>
+    <p>Data diambil melalui proses berikut:</p>
+    <ol style="color: var(--text-secondary); margin-left: 20px;">
+        <li>Flask route memanggil CoinGecko API endpoint <code>/coins/markets</code></li>
+        <li>Request menggunakan library <code>requests</code> dengan API key di header</li>
+        <li>Response dalam format JSON langsung di-parse oleh Python</li>
+        <li>Data divisualisasikan menggunakan template HTML/Jinja2</li>
+    </ol>
+
+    <h2>Fitur Utama</h2>
+    <ul>
+        <li><strong>Daftar Coin</strong> — Menampilkan 20 crypto teratas berdasarkan market cap</li>
+        <li><strong>Pencarian</strong> — Cari coin berdasarkan nama atau simbol</li>
+        <li><strong>Detail Coin</strong> — Halaman detail untuk setiap cryptocurrency</li>
+        <li><strong>Filter & Sort</strong> — Navigasi paginasi untuk melihat lebih banyak data</li>
+        <li><strong>Desain Responsif</strong> — Tampilan optimal di desktop dan mobile</li>
+    </ul>
+
+    <h2>Insight & Manfaat</h2>
+    <p>Website ini bermanfaat untuk:</p>
+    <ul>
+        <li><strong>Edukasi</strong> — Memahami cara kerja API dalam web development</li>
+        <li><strong>Monitoring</strong> — Melihat harga crypto secara real-time tanpa install aplikasi</li>
+        <li><strong>Referensi</strong> — Contoh implementasi Flask + External API integration</li>
+    </ul>
+
+    <h2>Struktur Project</h2>
+    <pre style="background: var(--bg-card); padding: 16px; border-radius: 8px; overflow-x: auto; color: var(--text-secondary);">
+crypto_tracker/
+├── app.py              # Flask application & routes
+├── templates/
+│   ├── base.html      # Base template
+│   ├── index.html     # Home page (coin list)
+│   ├── detail.html    # Coin detail page
+│   ├── about.html     # About page
+│   └── error.html     # Error page
+├── static/
+│   └── css/
+│       └── style.css  # Kraken-inspired CSS
+└── requirements.txt   # Dependencies
+    </pre>
+
+    <p style="margin-top: 32px; color: var(--text-muted);">
+        Dibuat sebagai tugas UTS Pemrograman Back-End — Semester Genap 2025/2026
+    </p>
+</div>
+{% endblock %}

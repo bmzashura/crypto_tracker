@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ coin.name }} ({{ coin.symbol|upper }}) - CryptoTracker{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-bottom: 24px;">← Back to Markets</a>
+
+<div class="coin-detail-header">
+    <img src="{{ coin.image.large }}" alt="{{ coin.name }}" class="coin-detail-image">
+    <div class="coin-detail-title">
+        <h1>{{ coin.name }}</h1>
+        <span class="symbol">{{ coin.symbol|upper }}</span>
+    </div>
+</div>
+
+<div class="price-hero">
+    <div class="current-price">{{ format_number(current_price.usd) }}</div>
+    <span class="price-change">
+        {% if price_change_24h %}
+            <span class="change {% if price_change_24h >= 0 %}positive{% else %}negative{% endif %}">
+                {% if price_change_24h >= 0 %}+{% endif %}{{ "%.2f"|format(price_change_24h) }}%
+            </span>
+        {% endif %}
+    </span>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Market Cap</h3>
+        <div class="value">{{ format_market_cap(market_cap.usd) }}</div>
+        {% if market_cap.usd and current_price.usd and current_price.usd > 0 %}
+        <div class="sub">Rank #{{ coin.market_cap_rank or 'N/A' }}</div>
+        {% endif %}
+    </div>
+
+    <div class="stat-card">
+        <h3>24h Volume</h3>
+        <div class="value">{{ format_market_cap(total_volume.usd) }}</div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Circulating Supply</h3>
+        <div class="value">{{ format_number(circulating_supply) }} {{ coin.symbol|upper }}</div>
+    </div>
+
+    <div class="stat-card">
+        <h3>All-Time High</h3>
+        <div class="value">{{ format_number(ath.usd) }}</div>
+        {% if ath.usd and current_price.usd and current_price.usd > 0 %}
+        <div class="sub">-{{ "%.2f"|format(((current_price.usd - ath.usd) / ath.usd) * 100) }}% from ATH</div>
+        {% endif %}
+    </div>
+
+    <div class="stat-card">
+        <h3>All-Time Low</h3>
+        <div class="value">{{ format_number(atl.usd) }}</div>
+        {% if atl.usd and current_price.usd and current_price.usd > 0 %}
+        <div class="sub">+{{ "%.2f"|format(((current_price.usd - atl.usd) / atl.usd) * 100) }}% from ATL</div>
+        {% endif %}
+    </div>
+
+    <div class="stat-card">
+        <h3>Community Score</h3>
+        <div class="value">{{ "%.2f"|format(community_data) }}</div>
+        <div class="sub">Based on social activity</div>
+    </div>
+</div>
+
+{% if coin.description.en %}
+<div class="stat-card" style="margin-top: 24px;">
+    <h3>About {{ coin.name }}</h3>
+    <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 8px;">{{ coin.description.en|safe }}</p>
+</div>
+{% endif %}
+{% endblock %}

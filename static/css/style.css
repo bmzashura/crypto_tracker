@@ -1,0 +1,568 @@
+/* =========================================================
+   CryptoTracker - Kraken-Inspired Design System
+   Colors from getdesign.md/design-md/kraken
+   Font: IBM Plex Sans
+   ========================================================= */
+
+:root {
+    /* Kraken Colors */
+    --black: #101114;
+    --white: #fff;
+    --border: #dedee5;
+    --gray: #686b82;
+    --silver: #9497a9;
+    --purple: #7132f5;
+    --purple-dark: #5741d8;
+    --purple-subtle: rgba(133, 91, 251, 0.16);
+    --green-text: #026b3f;
+    --green: rgba(20, 158, 97, 0.16);
+    --red-text: #dc2626;
+    --red: rgba(220, 38, 38, 0.12);
+
+    /* Extended Palette */
+    --bg-primary: #101114;
+    --bg-secondary: #1a1c23;
+    --bg-card: #22252e;
+    --bg-hover: #2a2e38;
+    --text-primary: #fff;
+    --text-secondary: #9497a9;
+    --text-muted: #686b82;
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+
+    /* Transitions */
+    --transition: 150ms ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'IBM Plex Sans', Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    width: 100%;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: var(--space-md) 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.logo span {
+    letter-spacing: -0.5px;
+}
+
+.nav {
+    display: flex;
+    gap: var(--space-lg);
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color var(--transition);
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+}
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+.main {
+    flex: 1;
+    padding: var(--space-xl) 0;
+}
+
+/* =========================================================
+   PAGE TITLE & SEARCH
+   ========================================================= */
+
+.page-header {
+    margin-bottom: var(--space-xl);
+}
+
+.page-title {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: var(--space-xs);
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+.search-form {
+    margin-bottom: var(--space-xl);
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.search-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color var(--transition);
+}
+
+.search-input:focus {
+    border-color: var(--purple);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.btn {
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.btn-primary {
+    background: var(--purple);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--purple-dark);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+/* =========================================================
+   COIN TABLE
+   ========================================================= */
+
+.table-wrapper {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.coin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.coin-table th {
+    text-align: left;
+    padding: var(--space-md) var(--space-lg);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.coin-table td {
+    padding: var(--space-md) var(--space-lg);
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+}
+
+.coin-table tr:hover td {
+    background: var(--bg-hover);
+}
+
+.coin-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Coin Column */
+.coin-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.coin-image {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+}
+
+.coin-name {
+    font-weight: 600;
+}
+
+.coin-symbol {
+    color: var(--text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+/* Price Column */
+.price {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 24h Change */
+.change {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.change.positive {
+    background: var(--green);
+    color: var(--green-text);
+}
+
+.change.negative {
+    background: var(--red);
+    color: var(--red-text);
+}
+
+/* Market Cap & Volume */
+.market-cap,
+.volume {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Rank Badge */
+.rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--purple-subtle);
+    color: var(--purple);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* =========================================================
+   PAGINATION
+   ========================================================= */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-xl);
+}
+
+.pagination a,
+.pagination span {
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.pagination a {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pagination a:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.pagination .current {
+    background: var(--purple);
+    color: var(--white);
+}
+
+.pagination .disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* =========================================================
+   COIN DETAIL PAGE
+   ========================================================= */
+
+.coin-detail-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.coin-detail-image {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg-card);
+}
+
+.coin-detail-title h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.coin-detail-title .symbol {
+    color: var(--text-muted);
+    font-size: 18px;
+    text-transform: uppercase;
+}
+
+.price-hero {
+    margin-bottom: var(--space-xl);
+}
+
+.price-hero .current-price {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.price-hero .price-change {
+    display: inline-flex;
+    margin-left: var(--space-md);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-card h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-sm);
+}
+
+.stat-card .value {
+    font-size: 20px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-card .sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: var(--space-xs);
+}
+
+/* =========================================================
+   ABOUT PAGE
+   ========================================================= */
+
+.about-content {
+    max-width: 800px;
+}
+
+.about-content h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: var(--space-xl);
+}
+
+.about-content h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: var(--space-xl) 0 var(--space-md);
+}
+
+.about-content p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+    line-height: 1.7;
+}
+
+.about-content ul {
+    list-style: none;
+    margin-bottom: var(--space-lg);
+}
+
+.about-content li {
+    padding: var(--space-sm) 0;
+    color: var(--text-secondary);
+    padding-left: var(--space-lg);
+    position: relative;
+}
+
+.about-content li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--purple);
+}
+
+/* =========================================================
+   ERROR PAGE
+   ========================================================= */
+
+.error-message {
+    text-align: center;
+    padding: var(--space-2xl);
+}
+
+.error-message h1 {
+    font-size: 24px;
+    margin-bottom: var(--space-md);
+}
+
+.error-message p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-lg);
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: var(--space-xl) 0;
+    margin-top: auto;
+}
+
+.footer p {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 var(--space-md);
+    }
+
+    .page-title {
+        font-size: 28px;
+    }
+
+    .coin-table th:nth-child(5),
+    .coin-table td:nth-child(5),
+    .coin-table th:nth-child(6),
+    .coin-table td:nth-child(6) {
+        display: none;
+    }
+
+    .coin-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .price-hero .current-price {
+        font-size: 32px;
+    }
+}
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+
+.text-green { color: var(--green-text); }
+.text-red { color: var(--red-text); }
+.text-muted { color: var(--text-muted); }
+.mt-xl { margin-top: var(--space-xl); }
