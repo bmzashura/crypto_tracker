@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - CryptoTracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Admin Dashboard</h1>
+    <p class="page-subtitle">Manage user registrations and permissions</p>
+</div>
+
+{# ---- STATS ---- #}
+<div class="admin-stats">
+    <div class="admin-stat-card">
+        <span class="admin-stat-value">{{ pending_users|length }}</span>
+        <span class="admin-stat-label">Pending Approval</span>
+    </div>
+    <div class="admin-stat-card">
+        <span class="admin-stat-value">{{ approved_users|length }}</span>
+        <span class="admin-stat-label">Approved Users</span>
+    </div>
+</div>
+
+{# ---- PENDING USERS ---- #}
+<div class="admin-section">
+    <h2 class="admin-section-title">
+        <i data-lucide="clock" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>
+        Pending Approval ({{ pending_users|length }})
+    </h2>
+
+    {% if pending_users %}
+    <div class="table-wrapper">
+        <table class="coin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in pending_users %}
+                <tr>
+                    <td><span class="rank">{{ loop.index }}</span></td>
+                    <td>
+                        <div class="coin-info">
+                            <div>
+                                <div class="coin-name">{{ user.username }}</div>
+                                {% if user.is_admin %}
+                                    <span class="signal-badge signal-admin">Admin</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="price">{{ user.email }}</span></td>
+                    <td><span class="change">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <form action="{{ url_for('admin_approve', user_id=user.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-approve">Approve</button>
+                            </form>
+                            <form action="{{ url_for('admin_reject', user_id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Reject and remove {{ user.username }}?');">
+                                <button type="submit" class="btn btn-sm btn-reject">Reject</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i data-lucide="check-circle" style="width:40px;height:40px;color:var(--green-text);margin-bottom:8px;"></i>
+        <p>No pending users. All caught up!</p>
+    </div>
+    {% endif %}
+</div>
+
+{# ---- APPROVED USERS ---- #}
+<div class="admin-section">
+    <h2 class="admin-section-title">
+        <i data-lucide="users" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>
+        Approved Users
+    </h2>
+
+    {% if approved_users %}
+    <div class="table-wrapper">
+        <table class="coin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Registered</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in approved_users %}
+                <tr>
+                    <td><span class="rank">{{ loop.index }}</span></td>
+                    <td>
+                        <div class="coin-name">{{ user.username }}</div>
+                    </td>
+                    <td><span class="price">{{ user.email }}</span></td>
+                    <td><span class="change">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</span></td>
+                    <td>
+                        {% if user.is_admin %}
+                            <span class="signal-badge signal-admin">Admin</span>
+                        {% else %}
+                            <span class="signal-badge signal-hold">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <form action="{{ url_for('admin_toggle_admin', user_id=user.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-secondary">
+                                    {% if user.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user {{ user.username }}? This cannot be undone.');">
+                                <button type="submit" class="btn btn-sm btn-reject">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No approved users yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Crypto Tracker{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div>
+            <h1>Welcome, {{ user.username }}!</h1>
+            <p class="dashboard-subtitle">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+        </div>
+    </div>
+
+    {% if global_data %}
+    <div class="dashboard-section">
+        <h2><i data-lucide="globe" class="section-icon"></i> Market Overview</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Market Cap</h3>
+                <div class="value">{{ format_market_cap(global_data.get('total_market_cap', {}).get('usd', 0)) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>24h Volume</h3>
+                <div class="value">{{ format_market_cap(global_data.get('total_volume', {}).get('usd', 0)) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Cryptocurrencies</h3>
+                <div class="value">{{ "{:,}".format(global_data.get('active_cryptocurrencies', 0)) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>BTC Dominance</h3>
+                <div class="value">{{ "%.1f"|format(global_data.get('market_cap_percentage', {}).get('btc', 0)) }}%</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if trending_coins %}
+    <div class="dashboard-section">
+        <h2><i data-lucide="flame" class="section-icon"></i> Trending Coins</h2>
+        <div class="trending-grid">
+            {% for coin in trending_coins %}
+            <a href="{{ url_for('coin_detail', coin_id=coin.id) }}" class="trending-card">
+                <div class="trending-header">
+                    <img src="{{ coin.thumb }}" alt="{{ coin.name }}" class="trending-icon">
+                    <div>
+                        <span class="trending-name">{{ coin.name }}</span>
+                        <span class="trending-symbol">{{ coin.symbol|upper }}</span>
+                    </div>
+                    {% if coin.market_cap_rank %}
+                        <span class="trending-rank">#{{ coin.market_cap_rank }}</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2><i data-lucide="heart" class="section-icon"></i> Your Watchlist</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-sm">+ Add Watchlist</a>
+        </div>
+
+        {% if watchlist_coins %}
+            <div class="coin-grid">
+                {% for coin in watchlist_coins %}
+                <div class="coin-card">
+                    <div class="coin-header">
+                        <img src="{{ coin.image }}" alt="{{ coin.name }}" class="coin-icon">
+                        <div>
+                            <h3>{{ coin.name }}</h3>
+                            <span class="coin-symbol">{{ coin.symbol|upper }}</span>
+                        </div>
+                        <form action="{{ url_for('watchlist_remove', coin_id=coin.id) }}" method="POST" class="watchlist-btn-form">
+                            <button type="submit" class="watchlist-btn in-watchlist" title="Remove from watchlist"><i data-lucide="heart" class="icon-heart-filled"></i></button>
+                        </form>
+                    </div>
+                    <div class="coin-price">{{ format_number(coin.current_price) }}</div>
+                    <div class="coin-change {% if coin.price_change_percentage_24h >= 0 %}positive{% else %}negative{% endif %}">
+                        {% if coin.price_change_percentage_24h >= 0 %}^{% else %}v{% endif %}
+                        {{ "%.2f"|format(coin.price_change_percentage_24h) }}%
+                    </div>
+                    <div class="coin-market-cap">Market Cap: {{ format_market_cap(coin.market_cap) }}</div>
+                    {% if coin.prediction and coin.prediction.lr %}
+                    <div class="coin-prediction">
+                        <span class="prediction-signal"><i data-lucide="{{ coin.prediction.overall_icon }}" class="signal-icon"></i> {{ coin.prediction.overall_signal }}</span>
+                        <span class="prediction-change {% if coin.prediction.lr.predicted_change_pct >= 0 %}positive{% else %}negative{% endif %}">
+                            {% if coin.prediction.lr.predicted_change_pct >= 0 %}+{% endif %}{{ "%.1f"|format(coin.prediction.lr.predicted_change_pct) }}% (7d)
+                        </span>
+                        <span class="prediction-confidence">({{ coin.prediction.lr.confidence }} R^2)</span>
+                        {% if coin.prediction.rsi %}
+                        <span class="prediction-meta">RSI {{ coin.prediction.rsi }} | SMA {{ coin.prediction.sma_signal }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('coin_detail', coin_id=coin.id) }}" class="btn btn-small">View Details</a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Your watchlist is empty.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Browse Coins</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Account Settings</h2>
+        <div class="quick-links">
+            <a href="{{ url_for('profile') }}" class="btn btn-outline">Edit Profile</a>
+            <a href="{{ url_for('change_password') }}" class="btn btn-outline">Change Password</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

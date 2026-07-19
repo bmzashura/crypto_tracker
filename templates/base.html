@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="{{ session.get('theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CryptoTracker - Live Cryptocurrency Prices{% endblock %}</title>
+    <title>{% block title %}CryptoTracker BMZ - Live Cryptocurrency Prices{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -17,11 +20,24 @@
                         <circle cx="16" cy="16" r="14" fill="#7132f5"/>
                         <path d="M16 8v16M12 12l4-4 4 4M12 20l4 4 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>CryptoTracker</span>
+                    <span>CryptoTracker BMZ</span>
                 </a>
                 <nav class="nav">
-                    <a href="{{ url_for('index') }}" class="nav-link">Markets</a>
-                    <a href="{{ url_for('about') }}" class="nav-link">About</a>
+                    <a href="{{ url_for('index') }}" class="nav-link"><i data-lucide="bar-chart-2" class="nav-icon"></i> Markets</a>
+                    <a href="{{ url_for('about') }}" class="nav-link"><i data-lucide="info" class="nav-icon"></i> About</a>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin') }}" class="nav-link"><i data-lucide="shield" class="nav-icon"></i> Admin</a>
+                        {% endif %}
+                        <a href="{{ url_for('dashboard') }}" class="nav-link"><i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard</a>
+                        <a href="{{ url_for('logout') }}" class="nav-link nav-link-highlight"><i data-lucide="log-out" class="nav-icon"></i> Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="nav-link"><i data-lucide="log-in" class="nav-icon"></i> Login</a>
+                        <a href="{{ url_for('register') }}" class="nav-link nav-link-highlight"><i data-lucide="user-plus" class="nav-icon"></i> Register</a>
+                    {% endif %}
+                    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" id="themeToggle">
+                        {% if session.get('theme', 'light') == 'dark' %}<i data-lucide="sun" class="theme-icon"></i>{% else %}<i data-lucide="moon" class="theme-icon"></i>{% endif %}
+                    </button>
                 </nav>
             </div>
         </div>
@@ -35,8 +51,49 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 CryptoTracker. Data powered by CoinGecko API. For educational purposes.</p>
+            <p>Built with <3 by Bemis Huntala - 1002240018 | Data powered by CoinGecko API</p>
         </div>
     </footer>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages" id="flashContainer">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}" data-auto-hide="true">{{ message }}</div>
+        {% endfor %}
+    </div>
+    <script>
+    (function() {
+        const container = document.getElementById('flashContainer');
+        if (!container) return;
+        const flashes = container.querySelectorAll('.flash[data-auto-hide]');
+        flashes.forEach(function(flash) {
+            setTimeout(function() {
+                flash.classList.add('hiding');
+                setTimeout(function() {
+                    flash.remove();
+                    if (container.children.length === 0) container.remove();
+                }, 300);
+            }, 3500);
+        });
+    })();
+    </script>
+    {% endif %}
+    {% endwith %}
+
+    <script>
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.className || 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.className = next;
+        lucide.createIcons();
+        fetch('/theme');
+    }
+    // Init Lucide icons on load
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+    </script>
 </body>
 </html>

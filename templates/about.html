@@ -1,66 +1,237 @@
 {% extends "base.html" %}
 
-{% block title %}About - CryptoTracker{% endblock %}
+{% block title %}About - CryptoTracker BMZ{% endblock %}
 
 {% block content %}
 <div class="about-content">
-    <h1>About CryptoTracker</h1>
+    <h1>About CryptoTracker BMZ</h1>
+    <p>A cryptocurrency price tracking web application built with Flask, featuring real-time market data, user authentication with admin approval system, watchlist management, and machine learning-based price prediction.</p>
 
-    <h2>Tema Website</h2>
-    <p>CryptoTracker adalah website monitoring harga cryptocurrency berbasis Flask yang mengintegrasikan data real-time dari CoinGecko API. Website ini dirancang dengan desain terinspirasi dari Kraken Exchange menggunakan sistem warna ungu dan hijau khas fintech crypto.</p>
-
-    <h2>API yang Digunakan</h2>
-    <p><strong>CoinGecko API</strong> — Gratis, reliable, dan menyediakan data untuk 18,000+ cryptocurrency dari 1,000+ exchange.</p>
+    <h2><i data-lucide="user" class="section-icon"></i>Student Information</h2>
     <ul>
-        <li>Free tier: 10,000 calls/month</li>
-        <li>Data: Price, Market Cap, Volume, Supply, ATH/ATL, dll</li>
-        <li>No authentication required (public endpoints)</li>
+        <li><strong>Name:</strong> Bemis Huntala</li>
+        <li><strong>NIM:</strong> 1002240018</li>
+        <li><strong>Study Program:</strong> Teknologi Informasi, Semester 4</li>
     </ul>
 
-    <h2>Cara Kerja Pengambilan Data API</h2>
-    <p>Data diambil melalui proses berikut:</p>
-    <ol style="color: var(--text-secondary); margin-left: 20px;">
-        <li>Flask route memanggil CoinGecko API endpoint <code>/coins/markets</code></li>
-        <li>Request menggunakan library <code>requests</code> dengan API key di header</li>
-        <li>Response dalam format JSON langsung di-parse oleh Python</li>
-        <li>Data divisualisasikan menggunakan template HTML/Jinja2</li>
+    <h2><i data-lucide="sparkles" class="section-icon"></i>Features</h2>
+    <ul>
+        <li><strong>Live Market Data</strong> -- Real-time cryptocurrency prices from CoinGecko API</li>
+        <li><strong>Market Overview</strong> -- Total market cap, 24h volume, BTC dominance, active cryptocurrencies</li>
+        <li><strong>Trending Coins</strong> -- Top 7 trending cryptocurrencies</li>
+        <li><strong>Price Charts</strong> -- Interactive 7D / 30D / 90D price history charts (Chart.js)</li>
+        <li><strong>Search</strong> -- Find any cryptocurrency by name or symbol</li>
+        <li><strong>User Authentication</strong> -- Secure register/login with password hashing (pbkdf2:sha256)</li>
+        <li><strong>Admin Approval System</strong> -- New users require admin approval before login</li>
+        <li><strong>Watchlist</strong> -- Save favorite coins with heart icon</li>
+        <li><strong>Price Prediction</strong> -- Linear Regression ML model predicting 7-day price trends</li>
+        <li><strong>Signal Filter</strong> -- Filter coins by BUY/SELL/HOLD/STRONG BUY/STRONG SELL (logged-in users)</li>
+        <li><strong>Dark / Light Mode</strong> -- Toggle theme with session persistence</li>
+        <li><strong>Toast Notifications</strong> -- Floating alerts with auto-dismiss</li>
+        <li><strong>Responsive Design</strong> -- Works on desktop and mobile</li>
+    </ul>
+
+    <h2><i data-lucide="brain" class="section-icon"></i>Machine Learning -- Linear Regression Price Prediction</h2>
+    <p>This app uses <strong>Simple Linear Regression</strong> to forecast cryptocurrency prices based on historical data.</p>
+
+    <h3>How It Works</h3>
+    <ol>
+        <li><strong>Data Collection</strong> -- Collects 30 days of daily price history from CoinGecko API</li>
+        <li><strong>Model Training</strong> -- Fits a Linear Regression model: <code>y = mx + c</code>
+            <ul>
+                <li><code>x</code> = day index (0, 1, 2, ..., 29)</li>
+                <li><code>y</code> = price in USD</li>
+            </ul>
+        </li>
+        <li><strong>Prediction</strong> -- Forecasts price at day <code>n + 7</code> (7 days ahead)</li>
+        <li><strong>Signal Generation</strong> -- Classifies as STRONG BUY / BUY / HOLD / SELL / STRONG SELL based on predicted change %</li>
+        <li><strong>Confidence Level</strong> -- Based on R^2 score (coefficient of determination)</li>
     </ol>
 
-    <h2>Fitur Utama</h2>
+    <h3>Signal Classification (Predicted Change %)</h3>
+    <table class="about-table">
+        <thead>
+            <tr><th>Predicted Change (7 days)</th><th>Signal</th><th>Icon</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>&gt; +10%</td><td>STRONG BUY</td><td>trending-up</td></tr>
+            <tr><td>+5% to +10%</td><td>BUY</td><td>trending-up</td></tr>
+            <tr><td>-5% to +5%</td><td>HOLD</td><td>minus</td></tr>
+            <tr><td>-10% to -5%</td><td>SELL</td><td>trending-down</td></tr>
+            <tr><td>&lt; -10%</td><td>STRONG SELL</td><td>trending-down</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Note:</strong> If R^2 &lt; 0.3, signal is always HOLD (low confidence).</p>
+
+    <h3>Confidence Levels (R^2 Score)</h3>
+    <table class="about-table">
+        <thead>
+            <tr><th>R^2 Score</th><th>Confidence</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>&gt; 0.7</td><td>High</td><td>Model fits data very well</td></tr>
+            <tr><td>0.4 - 0.7</td><td>Medium</td><td>Moderate fit</td></tr>
+            <tr><td>&lt; 0.3</td><td>Low</td><td>Signal forced to HOLD</td></tr>
+        </tbody>
+    </table>
+
+    <h3>R^2 Score Formula</h3>
+    <pre>R^2 = 1 - (SS_res / SS_tot)
+
+where:
+  SS_res = sum((y_actual - y_predicted)^2)  (residual sum of squares)
+  SS_tot = sum((y_actual - y_mean)^2)        (total sum of squares)</pre>
+
+    <h3>Technologies Used</h3>
     <ul>
-        <li><strong>Daftar Coin</strong> — Menampilkan 20 crypto teratas berdasarkan market cap</li>
-        <li><strong>Pencarian</strong> — Cari coin berdasarkan nama atau simbol</li>
-        <li><strong>Detail Coin</strong> — Halaman detail untuk setiap cryptocurrency</li>
-        <li><strong>Filter & Sort</strong> — Navigasi paginasi untuk melihat lebih banyak data</li>
-        <li><strong>Desain Responsif</strong> — Tampilan optimal di desktop dan mobile</li>
+        <li><strong>Backend:</strong> Flask 3.0+, Python</li>
+        <li><strong>Database:</strong> SQLite with Flask-SQLAlchemy</li>
+        <li><strong>Auth:</strong> Flask-Login, Werkzeug (pbkdf2:sha256)</li>
+        <li><strong>ML:</strong> scikit-learn (LinearRegression), NumPy</li>
+        <li><strong>API:</strong> CoinGecko (free tier)</li>
+        <li><strong>Charts:</strong> Chart.js 4 (CDN)</li>
+        <li><strong>Icons:</strong> Lucide (SVG)</li>
+        <li><strong>CSS:</strong> Custom CSS with CSS Variables (Dark/Light themes)</li>
     </ul>
 
-    <h2>Insight & Manfaat</h2>
-    <p>Website ini bermanfaat untuk:</p>
+    <h3>Limitations & Disclaimer</h3>
+    <p><strong>Important:</strong> This prediction is for <strong>educational/demonstration purposes only</strong>.</p>
     <ul>
-        <li><strong>Edukasi</strong> — Memahami cara kerja API dalam web development</li>
-        <li><strong>Monitoring</strong> — Melihat harga crypto secara real-time tanpa install aplikasi</li>
-        <li><strong>Referensi</strong> — Contoh implementasi Flask + External API integration</li>
+        <li>Linear Regression assumes a linear relationship -- crypto markets are highly non-linear</li>
+        <li>The model does not incorporate external factors (news, sentiment, macroeconomic data)</li>
+        <li>Cryptocurrency markets are extremely volatile and unpredictable</li>
+        <li>Past performance does NOT guarantee future results</li>
+        <li>Do NOT use this prediction for actual investment decisions</li>
     </ul>
 
-    <h2>Struktur Project</h2>
-    <pre style="background: var(--bg-card); padding: 16px; border-radius: 8px; overflow-x: auto; color: var(--text-secondary);">
-crypto_tracker/
-├── app.py              # Flask application & routes
-├── templates/
-│   ├── base.html      # Base template
-│   ├── index.html     # Home page (coin list)
-│   ├── detail.html    # Coin detail page
-│   ├── about.html     # About page
-│   └── error.html     # Error page
-├── static/
-│   └── css/
-│       └── style.css  # Kraken-inspired CSS
-└── requirements.txt   # Dependencies
-    </pre>
+    <h2><i data-lucide="database" class="section-icon"></i>Database Schema</h2>
+    <pre>User
+|-- id (INTEGER PRIMARY KEY)
+|-- username (VARCHAR UNIQUE)
+|-- email (VARCHAR UNIQUE)
+|-- password_hash (VARCHAR)
+|-- is_admin (BOOLEAN DEFAULT 0)
+|-- is_approved (BOOLEAN DEFAULT 0)
+|-- created_at (DATETIME)
 
-    <p style="margin-top: 32px; color: var(--text-muted);">
-        Dibuat sebagai tugas UTS Pemrograman Back-End — Semester Genap 2025/2026
-    </p>
+Watchlist
+|-- id (INTEGER PRIMARY KEY)
+|-- user_id (INTEGER REFERENCES user.id)
+|-- coin_id (VARCHAR)
+|-- created_at (DATETIME)</pre>
+
+    <h2><i data-lucide="code" class="section-icon"></i>Project Structure</h2>
+    <pre>crypto_tracker/
+|-- app.py                  # Flask app, routes, ML prediction
+|-- ml_model.py             # ML functions (Linear Regression)
+|-- requirements.txt        # Dependencies
+|-- instance/
+|   |-- users.db           # SQLite database (auto-created)
+|-- docs/
+|   |-- README.md          # Project overview
+|   |-- ML_PREDICTION.md   # ML documentation
+|   |-- API_DOCUMENTATION.md # Full API docs
+|-- templates/
+|   |-- base.html         # Layout + navbar + theme toggle
+|   |-- index.html        # Coin list + search + signal filter
+|   |-- detail.html       # Coin detail + chart + ML signal
+|   |-- dashboard.html    # Watchlist + prediction
+|   |-- login.html
+|   |-- register.html
+|   |-- profile.html
+|   |-- change_password.html
+|   |-- admin.html        # Admin dashboard
+|   |-- about.html
+|-- static/css/style.css   # Light + Dark theme</pre>
+
+    <h2><i data-lucide="link" class="section-icon"></i>API Documentation</h2>
+    <p>This app uses two types of APIs:</p>
+
+    <h3>External -- CoinGecko API (Free Demo Tier)</h3>
+    <p><strong>Base URL:</strong> <code>https://api.coingecko.com/api/v3</code></p>
+    <p><strong>API Key:</strong> <code>REMOVED_API_KEY</code></p>
+
+    <h3>GET /coins/markets</h3>
+    <p>Fetch market data for multiple coins</p>
+    <table class="about-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>vs_currency</td><td>string</td><td>usd</td><td>Currency (usd, eur, etc.)</td></tr>
+            <tr><td>order</td><td>string</td><td>market_cap_desc</td><td>Sort order</td></tr>
+            <tr><td>per_page</td><td>int</td><td>20</td><td>Results per page (max 250)</td></tr>
+            <tr><td>page</td><td>int</td><td>1</td><td>Page number</td></tr>
+            <tr><td>ids</td><td>string</td><td>--</td><td>Comma-separated coin IDs</td></tr>
+            <tr><td>sparkline</td><td>bool</td><td>false</td><td>Include sparkline</td></tr>
+        </tbody>
+    </table>
+
+    <h3>GET /coins/{id}</h3>
+    <p>Fetch detailed info for a specific coin</p>
+    <table class="about-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>localization</td><td>bool</td><td>false</td><td>Include localized languages</td></tr>
+            <tr><td>tickers</td><td>bool</td><td>false</td><td>Include tickers</td></tr>
+            <tr><td>community_data</td><td>bool</td><td>false</td><td>Include community stats</td></tr>
+            <tr><td>developer_data</td><td>bool</td><td>false</td><td>Include developer stats</td></tr>
+        </tbody>
+    </table>
+
+    <h3>GET /coins/{id}/market_chart</h3>
+    <p>Fetch price history for chart and ML prediction</p>
+    <table class="about-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>vs_currency</td><td>string</td><td>usd</td><td>Currency</td></tr>
+            <tr><td>days</td><td>int</td><td>7</td><td>Days of history (1, 7, 14, 30, 90, 180, 365)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>GET /search</h3>
+    <p>Search for coins by name or symbol</p>
+    <table class="about-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>query</td><td>string</td><td>Search term</td></tr>
+        </tbody>
+    </table>
+
+    <h3>GET /search/trending</h3>
+    <p>Fetch top 7 trending coins</p>
+    <p>No parameters required. Returns coins array with item: {id, name, symbol, thumb, market_cap_rank, price_btc}</p>
+
+    <h3>GET /global</h3>
+    <p>Fetch global market statistics</p>
+    <p>No parameters required. Returns: total_market_cap, total_volume, active_cryptocurrencies, market_cap_percentage</p>
+
+    <h3>Internal -- App Routes</h3>
+    <table class="about-table">
+        <thead>
+            <tr><th>Route</th><th>Method</th><th>Auth</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>/</td><td>GET</td><td>Public</td><td>Homepage (coin list + search)</td></tr>
+            <tr><td>/coin/{id}</td><td>GET</td><td>Public</td><td>Coin detail + price chart</td></tr>
+            <tr><td>/about</td><td>GET</td><td>Public</td><td>About page</td></tr>
+            <tr><td>/register</td><td>GET/POST</td><td>Public</td><td>User registration (pending approval)</td></tr>
+            <tr><td>/login</td><td>GET/POST</td><td>Public</td><td>User login (requires approval)</td></tr>
+            <tr><td>/logout</td><td>GET</td><td>Required</td><td>Clear session</td></tr>
+            <tr><td>/dashboard</td><td>GET</td><td>Required</td><td>Watchlist + prediction</td></tr>
+            <tr><td>/profile</td><td>GET/POST</td><td>Required</td><td>Edit profile</td></tr>
+            <tr><td>/change-password</td><td>GET/POST</td><td>Required</td><td>Change password</td></tr>
+            <tr><td>/watchlist/add/{id}</td><td>POST</td><td>Required</td><td>Add to watchlist</td></tr>
+            <tr><td>/watchlist/remove/{id}</td><td>POST</td><td>Required</td><td>Remove from watchlist</td></tr>
+            <tr><td>/theme</td><td>GET</td><td>Public</td><td>Toggle dark/light mode</td></tr>
+            <tr><td>/admin</td><td>GET</td><td>Admin</td><td>Admin dashboard</td></tr>
+            <tr><td>/admin/approve/{id}</td><td>POST</td><td>Admin</td><td>Approve pending user</td></tr>
+            <tr><td>/admin/reject/{id}</td><td>POST</td><td>Admin</td><td>Reject/delete pending user</td></tr>
+            <tr><td>/admin/toggle-admin/{id}</td><td>POST</td><td>Admin</td><td>Promote/demote admin</td></tr>
+            <tr><td>/admin/delete-user/{id}</td><td>POST</td><td>Admin</td><td>Delete user</td></tr>
+        </tbody>
+    </table>
+
+    <p>Full API documentation available in: <code>docs/API_DOCUMENTATION.md</code></p>
 </div>
+
+<script>document.addEventListener('DOMContentLoaded', function() { lucide.createIcons(); });</script>
 {% endblock %}

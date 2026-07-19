@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Crypto Tracker{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-card">
+        <h2>Edit Profile</h2>
+        <p class="profile-subtitle">Update your account information</p>
+
+        <form method="POST" action="{{ url_for('profile') }}" class="profile-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="{{ user.username }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ user.email }}" required>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+
+        <div class="profile-section-divider">
+            <span>Account Settings</span>
+        </div>
+
+        <div class="profile-actions">
+            <a href="{{ url_for('change_password') }}" class="btn btn-outline">Change Password</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

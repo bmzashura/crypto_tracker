@@ -1,75 +1,286 @@
 {% extends "base.html" %}
-
 {% block title %}{{ coin.name }} ({{ coin.symbol|upper }}) - CryptoTracker{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-bottom: 24px;">← Back to Markets</a>
+{# ---- NAV ---- #}
+<div class="detail-nav">
+    <a href="{{ url_for('index') }}" class="back-link">
+        <i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"></i>Markets
+    </a>
+    {% if current_user.is_authenticated %}
+        {% if in_watchlist %}
+            <form action="{{ url_for('watchlist_remove', coin_id=coin.id) }}" method="POST">
+                <button type="submit" class="watchlist-btn in-watchlist" style="font-size:14px;">
+                    <i data-lucide="heart" class="icon-heart-filled"></i> In Watchlist
+                </button>
+            </form>
+        {% else %}
+            <form action="{{ url_for('watchlist_add', coin_id=coin.id) }}" method="POST">
+                <button type="submit" class="watchlist-btn" style="font-size:14px;">
+                    <i data-lucide="heart" class="icon-heart"></i> Add to Watchlist
+                </button>
+            </form>
+        {% endif %}
+    {% endif %}
+</div>
 
-<div class="coin-detail-header">
-    <img src="{{ coin.image.large }}" alt="{{ coin.name }}" class="coin-detail-image">
-    <div class="coin-detail-title">
-        <h1>{{ coin.name }}</h1>
-        <span class="symbol">{{ coin.symbol|upper }}</span>
+{# ---- HERO ---- #}
+<div class="detail-hero">
+    <div class="detail-coin-info">
+        <img src="{{ coin.image.large }}" alt="{{ coin.name }}" class="detail-coin-img">
+        <div>
+            <div class="detail-coin-name">{{ coin.name }} <span class="detail-coin-symbol">{{ coin.symbol|upper }}</span></div>
+            {% if coin.market_cap_rank %}<span class="detail-rank">Rank #{{ coin.market_cap_rank }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="detail-price-block">
+        <span class="detail-price">{{ format_number(current_price.usd) }}</span>
+        {% if price_change_24h is not none %}
+            {% if price_change_24h >= 0 %}
+                <span class="change positive" style="font-size:16px;">+{{ "%.2f"|format(price_change_24h) }}%</span>
+            {% else %}
+                <span class="change negative" style="font-size:16px;">{{ "%.2f"|format(price_change_24h) }}%</span>
+            {% endif %}
+        {% endif %}
     </div>
 </div>
 
-<div class="price-hero">
-    <div class="current-price">{{ format_number(current_price.usd) }}</div>
-    <span class="price-change">
-        {% if price_change_24h %}
-            <span class="change {% if price_change_24h >= 0 %}positive{% else %}negative{% endif %}">
-                {% if price_change_24h >= 0 %}+{% endif %}{{ "%.2f"|format(price_change_24h) }}%
-            </span>
-        {% endif %}
-    </span>
-</div>
-
-<div class="stats-grid">
-    <div class="stat-card">
-        <h3>Market Cap</h3>
-        <div class="value">{{ format_market_cap(market_cap.usd) }}</div>
-        {% if market_cap.usd and current_price.usd and current_price.usd > 0 %}
-        <div class="sub">Rank #{{ coin.market_cap_rank or 'N/A' }}</div>
-        {% endif %}
-    </div>
-
-    <div class="stat-card">
-        <h3>24h Volume</h3>
-        <div class="value">{{ format_market_cap(total_volume.usd) }}</div>
-    </div>
-
-    <div class="stat-card">
-        <h3>Circulating Supply</h3>
-        <div class="value">{{ format_number(circulating_supply) }} {{ coin.symbol|upper }}</div>
-    </div>
-
-    <div class="stat-card">
-        <h3>All-Time High</h3>
-        <div class="value">{{ format_number(ath.usd) }}</div>
-        {% if ath.usd and current_price.usd and current_price.usd > 0 %}
-        <div class="sub">-{{ "%.2f"|format(((current_price.usd - ath.usd) / ath.usd) * 100) }}% from ATH</div>
-        {% endif %}
-    </div>
-
-    <div class="stat-card">
-        <h3>All-Time Low</h3>
-        <div class="value">{{ format_number(atl.usd) }}</div>
-        {% if atl.usd and current_price.usd and current_price.usd > 0 %}
-        <div class="sub">+{{ "%.2f"|format(((current_price.usd - atl.usd) / atl.usd) * 100) }}% from ATL</div>
-        {% endif %}
-    </div>
-
-    <div class="stat-card">
-        <h3>Community Score</h3>
-        <div class="value">{{ "%.2f"|format(community_data) }}</div>
-        <div class="sub">Based on social activity</div>
+{# ---- ML SIGNAL ---- #}
+{% if adv and adv.lr %}
+<div class="indicators-grid">
+    <div class="indicator-card signal-card" style="grid-column: span 4;">
+        <div class="signal-header">
+            <span class="indicator-title"><i data-lucide="brain" class="indicator-icon"></i>ML Prediction Signal (Linear Regression)</span>
+        </div>
+        <div class="signal-body">
+            <div class="signal-main">
+                <i data-lucide="{{ adv.overall_icon }}" style="width:36px;height:36px;color:var(--purple);"></i>
+                <span class="signal-name">{{ adv.overall_signal }}</span>
+            </div>
+            <div class="signal-stats">
+                <div class="signal-stat">
+                    <span class="signal-stat-label">Prediksi 7 Hari</span>
+                    {% if adv.lr.predicted_change_pct >= 0 %}
+                        <span class="signal-stat-value text-green">+{{ "%.1f"|format(adv.lr.predicted_change_pct) }}%</span>
+                    {% else %}
+                        <span class="signal-stat-value text-red">{{ "%.1f"|format(adv.lr.predicted_change_pct) }}%</span>
+                    {% endif %}
+                </div>
+                <div class="signal-stat">
+                    <span class="signal-stat-label">Harga Sekarang</span>
+                    <span class="signal-stat-value">{{ format_number(adv.lr.current_price) }}</span>
+                </div>
+                <div class="signal-stat">
+                    <span class="signal-stat-label">Prediksi 7d</span>
+                    <span class="signal-stat-value">{{ format_number(adv.lr.predicted_price) }}</span>
+                </div>
+                <div class="signal-stat">
+                    <span class="signal-stat-label">Confidence</span>
+                    <span class="signal-stat-value">{{ adv.lr.confidence }} (R^2 {{ "%.0f"|format(adv.lr.r2 * 100) }}%)</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endif %}
 
+{# ---- PRICE CHART ---- #}
+{% if price_points %}
+<div class="chart-section">
+    <div class="chart-header">
+        <span class="detail-chart-title">Price (USD)</span>
+        <div class="chart-range-selector">
+            <a href="{{ url_for('coin_detail', coin_id=coin.id, days=7) }}" class="range-btn {% if chart_days == 7 %}active{% endif %}">7D</a>
+            <a href="{{ url_for('coin_detail', coin_id=coin.id, days=30) }}" class="range-btn {% if chart_days == 30 %}active{% endif %}">30D</a>
+            <a href="{{ url_for('coin_detail', coin_id=coin.id, days=90) }}" class="range-btn {% if chart_days == 90 %}active{% endif %}">90D</a>
+        </div>
+    </div>
+    <div class="chart-wrapper" style="height:300px;">
+        <canvas id="priceChart"></canvas>
+    </div>
+</div>
+{% endif %}
+
+{# ---- STATS GRID ---- #}
+<div class="detail-stats-grid">
+    <div class="detail-stat">
+        <span class="detail-stat-label">Market Cap</span>
+        <span class="detail-stat-value">{{ format_market_cap(market_cap.usd) }}</span>
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">24h Volume</span>
+        <span class="detail-stat-value">{{ format_market_cap(total_volume.usd) }}</span>
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">Circulating</span>
+        <span class="detail-stat-value">{{ format_number(circulating_supply) }} {{ coin.symbol|upper }}</span>
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">Total Supply</span>
+        <span class="detail-stat-value">{{ format_number(coin.get('total_supply', 0) or 0) }} {{ coin.symbol|upper }}</span>
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">ATH</span>
+        <span class="detail-stat-value">{{ format_number(ath.usd) }}</span>
+        {% if market_extra.ath_date %}<span class="detail-stat-sub">{{ market_extra.ath_date[:10] }}</span>{% endif %}
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">ATL</span>
+        <span class="detail-stat-value">{{ format_number(atl.usd) }}</span>
+        {% if market_extra.atl_date %}<span class="detail-stat-sub">{{ market_extra.atl_date[:10] }}</span>{% endif %}
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">Max Supply</span>
+        <span class="detail-stat-value">{{ format_number(market_extra.max_supply or 0) }}</span>
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">24h High</span>
+        <span class="detail-stat-value">{{ format_number(market_extra.high_24h) }}</span>
+    </div>
+    <div class="detail-stat">
+        <span class="detail-stat-label">24h Low</span>
+        <span class="detail-stat-value">{{ format_number(market_extra.low_24h) }}</span>
+    </div>
+</div>
+
+{# ---- ABOUT ---- #}
 {% if coin.description.en %}
-<div class="stat-card" style="margin-top: 24px;">
-    <h3>About {{ coin.name }}</h3>
-    <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 8px;">{{ coin.description.en|safe }}</p>
+<div class="detail-about">
+    <div class="detail-about-header">
+        <h3 class="detail-about-title">About {{ coin.name }}</h3>
+        <button class="about-toggle-btn" onclick="toggleAbout()" id="aboutToggleBtn">Read more</button>
+    </div>
+    <p class="detail-about-text" id="aboutText">{{ coin.description.en|striptags|truncate(300) }}</p>
+    <div class="detail-about-full" id="aboutFull" style="display:none;">{{ coin.description.en|safe }}</div>
 </div>
+<script>
+var aboutExpanded = false;
+function toggleAbout() {
+    var shortText = document.getElementById('aboutText');
+    var fullText = document.getElementById('aboutFull');
+    var btn = document.getElementById('aboutToggleBtn');
+    if (aboutExpanded) {
+        shortText.style.display = '';
+        fullText.style.display = 'none';
+        btn.textContent = 'Read more';
+        aboutExpanded = false;
+    } else {
+        shortText.style.display = 'none';
+        fullText.style.display = '';
+        btn.textContent = 'Show less';
+        aboutExpanded = true;
+    }
+}
+</script>
+{% endif %}
+
+{# ---- CHART.JS SCRIPT ---- #}
+{% if price_points %}
+<script>
+(function() {
+    var pricePoints = {{ price_points | tojson }};
+    var labels = pricePoints.map(function(p) {
+        var d = new Date(p[0]);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    var prices = pricePoints.map(function(p) { return p[1]; });
+    var isPositive = prices[prices.length - 1] >= prices[0];
+    var lineColor = isPositive ? '#149e61' : '#dc2626';
+
+    {% if adv and adv.lr and adv.lr.forecast_points %}
+    var forecastPoints = {{ adv.lr.forecast_points | tojson }};
+    var hasForecast = true;
+    {% else %}
+    var forecastPoints = [];
+    var hasForecast = false;
+    {% endif %}
+
+    var ctx = document.getElementById('priceChart').getContext('2d');
+    var datasets = [];
+
+    // Price line
+    datasets.push({
+        label: 'Price (USD)',
+        data: prices,
+        borderColor: lineColor,
+        backgroundColor: lineColor + '18',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.1
+    });
+
+    // Forecast line (extends from last price)
+    var chartLabels = labels;
+    if (hasForecast && forecastPoints.length > 0) {
+        var lastDate = new Date(pricePoints[pricePoints.length - 1][0]);
+        var forecastLabels = [labels[labels.length - 1]];
+        for (var fi = 1; fi <= forecastPoints.length; fi++) {
+            var fd = new Date(lastDate);
+            fd.setDate(fd.getDate() + fi);
+            forecastLabels.push(fd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+        chartLabels = labels.slice(0, labels.length - 1).concat(forecastLabels);
+        var lastPrice = prices[prices.length - 1];
+        var forecastData = prices.slice(0, prices.length - 1).concat([lastPrice]).concat(forecastPoints);
+        datasets.push({
+            label: 'Forecast (7d)',
+            data: forecastData,
+            borderColor: '#8b5cf6',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1
+        });
+    }
+
+    new Chart(ctx, {
+        type: 'line',
+        data: { labels: chartLabels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', axis: 'x', intersect: false },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { boxWidth: 12, padding: 8, font: { size: 10 }, color: 'var(--text-secondary)' }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(ctx) {
+                            if (ctx.parsed.y === null) return null;
+                            return ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-US', { maximumFractionDigits: 4 });
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { maxTicksLimit: 8, color: 'var(--text-muted)', font: { size: 10 } }
+                },
+                y: {
+                    grid: { color: 'var(--border-light)' },
+                    ticks: {
+                        color: 'var(--text-muted)',
+                        font: { size: 10 },
+                        callback: function(val) { return '$' + val.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
 {% endif %}
 {% endblock %}
