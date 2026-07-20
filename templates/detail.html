@@ -191,6 +191,27 @@ function toggleAbout() {
     var isPositive = prices[prices.length - 1] >= prices[0];
     var lineColor = isPositive ? '#149e61' : '#dc2626';
 
+    // Resolve CSS variables to actual colors for Chart.js canvas
+    // Canvas cannot use CSS variables directly — we must resolve them via computed style
+    var dummy = document.createElement('div');
+    dummy.style.color = 'rgba(0,0,0,0)'; // won't be visible
+    document.body.appendChild(dummy);
+    var cs = window.getComputedStyle(dummy);
+    function resolveVar(name) {
+        var val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        // If empty, fall back to computed style of dummy element (inherited vars)
+        if (!val) {
+            val = cs.getPropertyValue(name).trim();
+        }
+        // Map known CSS vars to dark-mode-aware resolved values
+        if (val.startsWith('var(')) return resolveVar(val.slice(4, -1).trim());
+        return val || '#888';
+    }
+    var chartTextColor  = resolveVar('--text-secondary');
+    var chartMutedColor = resolveVar('--text-muted');
+    var chartGridColor  = resolveVar('--border-light');
+    document.body.removeChild(dummy);
+
     {% if adv and adv.lr and adv.lr.forecast_points %}
     var forecastPoints = {{ adv.lr.forecast_points | tojson }};
     var hasForecast = true;
@@ -251,7 +272,7 @@ function toggleAbout() {
                 legend: {
                     display: true,
                     position: 'top',
-                    labels: { boxWidth: 12, padding: 8, font: { size: 10 }, color: 'var(--text-secondary)' }
+                    labels: { boxWidth: 12, padding: 8, font: { size: 10 }, color: chartTextColor }
                 },
                 tooltip: {
                     mode: 'index',
@@ -267,12 +288,12 @@ function toggleAbout() {
             scales: {
                 x: {
                     grid: { display: false },
-                    ticks: { maxTicksLimit: 8, color: 'var(--text-muted)', font: { size: 10 } }
+                    ticks: { maxTicksLimit: 8, color: chartMutedColor, font: { size: 10 } }
                 },
                 y: {
-                    grid: { color: 'var(--border-light)' },
+                    grid: { color: chartGridColor },
                     ticks: {
-                        color: 'var(--text-muted)',
+                        color: chartMutedColor,
                         font: { size: 10 },
                         callback: function(val) { return '$' + val.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
                     }

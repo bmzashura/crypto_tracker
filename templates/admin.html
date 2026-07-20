@@ -3,9 +3,14 @@
 {% block title %}Admin Dashboard - CryptoTracker{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Admin Dashboard</h1>
-    <p class="page-subtitle">Manage user registrations and permissions</p>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="page-title">Admin Dashboard</h1>
+        <p class="page-subtitle">Manage user registrations and permissions</p>
+    </div>
+    <button class="btn btn-primary" onclick="openCreateModal()">
+        + Create User
+    </button>
 </div>
 
 {# ---- STATS ---- #}
@@ -116,6 +121,9 @@
                     </td>
                     <td>
                         <div class="action-btns">
+                            <a href="{{ url_for('admin_edit_user', user_id=user.id) }}">
+                                <button type="button" class="btn btn-sm btn-secondary">Edit</button>
+                            </a>
                             <form action="{{ url_for('admin_toggle_admin', user_id=user.id) }}" method="POST" style="display:inline;">
                                 <button type="submit" class="btn btn-sm btn-secondary">
                                     {% if user.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
@@ -137,4 +145,88 @@
     </div>
     {% endif %}
 </div>
+
+{# ================================================ #}
+{# CREATE USER MODAL                                 #}
+{# ================================================ #}
+<div id="createModal" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+">
+    <div style="
+        background: var(--card-bg, #f8f9fa);
+        color: var(--text-color, #1a1a2e);
+        border-radius: 12px;
+        padding: 32px;
+        width: 420px;
+        max-width: 90vw;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    ">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="margin: 0; font-size: 18px;">Create New User</h2>
+            <button onclick="closeCreateModal()" style="
+                background: none; border: none; font-size: 22px;
+                cursor: pointer; color: var(--text-secondary, #666); line-height: 1;
+            ">×</button>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin_create_user') }}">
+            <div class="form-group">
+                <label for="cu_username">Username</label>
+                <input type="text" id="cu_username" name="username"
+                       placeholder="Min. 3 characters" minlength="3" required
+                       style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: var(--input-bg, #fff); color: var(--text-color, #1a1a2e); font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group">
+                <label for="cu_email">Email</label>
+                <input type="email" id="cu_email" name="email"
+                       placeholder="user@example.com" required
+                       style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: var(--input-bg, #fff); color: var(--text-color, #1a1a2e); font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group">
+                <label for="cu_password">Password</label>
+                <input type="password" id="cu_password" name="password"
+                       placeholder="Min. 6 characters" minlength="6" required
+                       style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: var(--input-bg, #fff); color: var(--text-color, #1a1a2e); font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="cu_make_admin" name="make_admin"
+                       style="width: auto;">
+                <label for="cu_make_admin" style="margin: 0; font-size: 14px;">Grant Admin Privileges</label>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+                <button type="button" onclick="closeCreateModal()"
+                        style="flex: 1; padding: 10px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: transparent; color: var(--text-color, #1a1a2e); cursor: pointer; font-size: 14px;">
+                    Cancel
+                </button>
+                <button type="submit"
+                        style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: var(--primary, #2e74b5); color: #fff; cursor: pointer; font-size: 14px; font-weight: 600;">
+                    Create User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openCreateModal() {
+    document.getElementById('createModal').style.display = 'flex';
+}
+function closeCreateModal() {
+    document.getElementById('createModal').style.display = 'none';
+}
+// Close modal on backdrop click
+document.getElementById('createModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCreateModal();
+});
+</script>
 {% endblock %}

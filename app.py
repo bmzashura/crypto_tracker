@@ -401,6 +401,94 @@ def admin():
     )
 
 
+@app.route('/admin/create-user', methods=['POST'])
+@login_required
+def admin_create_user():
+    """Admin creates a user directly (no registration email needed)"""
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
+
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    make_admin = request.form.get('make_admin') == 'on'
+
+    errors = []
+    if not username or len(username) < 3:
+        errors.append('Username must be at least 3 characters.')
+    if not email or '@' not in email:
+        errors.append('Valid email is required.')
+    if not password or len(password) < 6:
+        errors.append('Password must be at least 6 characters.')
+    if User.query.filter_by(username=username).first():
+        errors.append('Username already exists.')
+    if User.query.filter_by(email=email).first():
+        errors.append('Email already registered.')
+
+    if errors:
+        for e in errors:
+            flash(e, 'error')
+        return redirect(url_for('admin'))
+
+    user = User(username=username, email=email)
+    user.set_password(password)
+    user.is_approved = True  # Admin-created = auto-approved
+    user.is_admin = make_admin
+    db.session.add(user)
+    db.session.commit()
+
+    flash(f'User "{username}" created successfully. ' + ('Admin access granted.' if make_admin else ''), 'success')
+    return redirect(url_for('admin'))
+
+
+@app.route('/admin/edit-user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_user(user_id):
+    """Admin edits a user: username, email, password, admin flag"""
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('dashboard'))
+
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        new_username = request.form.get('username', '').strip()
+        new_email = request.form.get('email', '').strip().lower()
+        new_password = request.form.get('password', '')
+        make_admin = request.form.get('make_admin') == 'on'
+
+        errors = []
+        if not new_username or len(new_username) < 3:
+            errors.append('Username must be at least 3 characters.')
+        if not new_email or '@' not in new_email:
+            errors.append('Valid email is required.')
+        if User.query.filter_by(username=new_username).first() and User.query.filter_by(username=new_username).first().id != user_id:
+            errors.append('Username already taken.')
+        if User.query.filter_by(email=new_email).first() and User.query.filter_by(email=new_email).first().id != user_id:
+            errors.append('Email already registered.')
+
+        if errors:
+            for e in errors:
+                flash(e, 'error')
+            return redirect(url_for('admin_edit_user', user_id=user_id))
+
+        user.username = new_username
+        user.email = new_email
+        user.is_admin = make_admin
+        if new_password:
+            if len(new_password) < 6:
+                flash('Password must be at least 6 characters.', 'error')
+                return redirect(url_for('admin_edit_user', user_id=user_id))
+            user.set_password(new_password)
+
+        db.session.commit()
+        flash(f'User "{user.username}" updated successfully.', 'success')
+        return redirect(url_for('admin'))
+
+    return render_template('admin_edit.html', edit_user=user)
+
+
 @app.route('/admin/approve/<int:user_id>', methods=['POST'])
 @login_required
 def admin_approve(user_id):
@@ -706,6 +794,70 @@ def theme():
 def init_db():
     with app.app_context():
         db.create_all()
+
+
+# ─── Error Handlers ────────────────────────────────────────────────
+
+
+@app.errorhandler(404)
+def not_found(e):
+    """Custom 404 — Page Not Found"""
+    return render_template(
+        'error.html',
+        error_code='404',
+        error_title='Halaman Tidak Ditemukan',
+        icon_name='file-x',
+        message='Halaman yang Anda cari tidak ditemukan. Pastikan URL yang Anda masukkan sudah benar.'
+    ), 404
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    """Custom 500 — Internal Server Error"""
+    return render_template(
+        'error.html',
+        error_code='500',
+        error_title='Kesalahan Server',
+        icon_name='server-off',
+        message='Terjadi kesalahan di sisi server. Tim kami sudah notified dan sedang memperbaiki masalah ini.'
+    ), 500
+
+
+@app.errorhandler(403)
+def forbidden(e):
+    """Custom 403 — Forbidden"""
+    return render_template(
+        'error.html',
+        error_code='403',
+        error_title='Akses Ditolak',
+        icon_name='shield-off',
+        message='Anda tidak memiliki izin untuk mengakses halaman ini.'
+    ), 403
+
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    """Custom 405 — Method Not Allowed"""
+    return render_template(
+        'error.html',
+        error_code='405',
+        error_title='Metode Tidak Diizinkan',
+        icon_name='x-circle',
+        message='Metode request yang Anda gunakan tidak diizinkan untuk halaman ini.'
+    ), 405
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Catch-all — handles any unhandled exception"""
+    app.logger.error(f'Unhandled exception: {e}')
+    return render_template(
+        'error.html',
+        error_code='Oops',
+        error_title='Terjadi Kesalahan',
+        icon_name='alert-triangle',
+        message='Terjadi kesalahan yang tidak terduga. Tim kami sudah notified.'
+    ), 500
 
 
 if __name__ == '__main__':

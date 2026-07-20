@@ -36,7 +36,7 @@
                         <a href="{{ url_for('register') }}" class="nav-link nav-link-highlight"><i data-lucide="user-plus" class="nav-icon"></i> Register</a>
                     {% endif %}
                     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" id="themeToggle">
-                        {% if session.get('theme', 'light') == 'dark' %}<i data-lucide="sun" class="theme-icon"></i>{% else %}<i data-lucide="moon" class="theme-icon"></i>{% endif %}
+                        <i data-lucide="{{ 'sun' if session.get('theme', 'light') == 'dark' else 'moon' }}" class="theme-icon" id="themeIcon"></i>
                     </button>
                 </nav>
             </div>
@@ -87,7 +87,14 @@
         const current = html.className || 'light';
         const next = current === 'dark' ? 'light' : 'dark';
         html.className = next;
-        lucide.createIcons();
+
+        // Swap icon: dark mode -> sun icon (switch to light), light mode -> moon icon (switch to dark)
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+            icon.setAttribute('data-lucide', next === 'dark' ? 'sun' : 'moon');
+            lucide.createIcons({ nodes: [icon] });
+        }
+
         fetch('/theme');
     }
     // Init Lucide icons on load

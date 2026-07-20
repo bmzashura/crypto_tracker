@@ -7,7 +7,7 @@
     <div class="dashboard-header">
         <div>
             <h1>Welcome, {{ user.username }}!</h1>
-            <p class="dashboard-subtitle">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+            <p class="dashboard-subtitle">Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</p>
         </div>
     </div>
 
