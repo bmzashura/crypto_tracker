@@ -41,32 +41,149 @@ Lihat folder `docs/` untuk dokumentasi lengkap.
 
 ---
 
-## Cara Instalasi
+## Cara Menjalankan Aplikasi
 
-### Prasyarat
-- Python 3.9+
-- pip3
+### Tahapan Lengkap
 
-### Langkah
+#### 1. Persiapan Lingkungan
 
 ```bash
-# 1. Clone repository
+# Pastikan Python 3.9+ terinstall
+python3 --version
+```
+
+#### 2. Clone Repository
+
+```bash
 git clone https://github.com/bmzashura/crypto_tracker.git
 cd crypto_tracker
+```
 
-# 2. Buat virtual environment (opsional tapi disarankan)
+#### 3. Buat Virtual Environment (Opsional tapi Disarankan)
+
+```bash
+# Membuat virtual environment
 python3 -m venv venv
-source venv/bin/activate  # macOS/Linux
-# venv\Scripts\activate     # Windows
 
-# 3. Install dependencies
+# Aktifkan virtual environment
+source venv/bin/activate        # macOS / Linux
+# venv\Scripts\activate         # Windows (CMD)
+# venv\Scripts\Activate.ps1    # Windows (PowerShell)
+
+# Jika menggunakan zsh/bash di macOS, aktifkan dengan:
+# source venv/bin/activate
+```
+
+#### 4. Install Dependencies
+
+```bash
+# Upgrade pip terlebih dahulu (opsional)
+pip3 install --upgrade pip
+
+# Install semua dependencies dari requirements.txt
 pip3 install -r requirements.txt
+```
 
-# 4. Jalankan aplikasi
+**Daftar dependencies** (`requirements.txt`):
+| Package | Fungsi |
+|---|---|
+| `flask` | Web framework |
+| `flask-sqlalchemy` | ORM database |
+| `flask-login` | Session-based authentication |
+| `werkzeug` | Password hashing |
+| `requests` | HTTP client untuk CoinGecko API |
+| `numpy` | Komputasi numerik untuk ML |
+| `scikit-learn` | Machine Learning (LinearRegression, RSI, SMA, Bollinger) |
+
+#### 5. Jalankan Aplikasi
+
+```bash
+# Jalankan Flask app
 python3 app.py
 ```
 
-Aplikasi akan berjalan di `http://127.0.0.1:5050`
+**Output yang diharapkan:**
+```
+Starting CryptoTracker Flask App...
+API Key: CG-aop5s5...
+Database initialized.
+ * Running on http://127.0.0.1:5050/
+```
+
+#### 6. Akses Aplikasi
+
+Buka browser dan navigasi ke:
+```
+http://127.0.0.1:5050
+```
+
+**Halaman yang tersedia:**
+| URL | Deskripsi |
+|---|---|
+| `/` | Homepage — daftar harga koin |
+| `/login` | Halaman login |
+| `/register` | Halaman registrasi |
+| `/dashboard` | Dashboard user (login required) |
+| `/profile` | Edit profil (login required) |
+| `/change-password` | Ganti password (login required) |
+| `/admin` | Panel admin (admin only) |
+| `/about` | About + dokumentasi ML |
+| `/coin/<coin_id>` | Detail koin + chart + ML |
+
+#### 7. Login dengan Akun Default
+
+Buka `http://127.0.0.1:5050/login` dan gunakan kredensial berikut:
+
+| Role | Username | Password |
+|---|---|---|
+| Admin | `admin` | `Admin1234` |
+| User | `reporter_test` | `ReportTest123` |
+
+> **Catatan Penting:** Akun baru yang register memerlukan approval dari admin sebelum bisa login. Login sebagai admin dulu, lalu approve user baru di `/admin`.
+
+#### 8. Menghentikan Aplikasi
+
+```bash
+# Tekan Ctrl+C di terminal yang menjalankan Flask
+
+# Atau jika di background:
+pkill -f "python3 app.py"
+```
+
+#### 9. Troubleshooting
+
+**Port 5050 sudah digunakan?**
+```bash
+# Cari proses yang menggunakan port 5050
+lsof -ti:5050
+
+# Kill proses tersebut
+kill -9 <PID>
+
+# Atau ganti port di app.py baris terakhir:
+# app.run(debug=True, port=5051)
+```
+
+**Error "No module named flask"?**
+```bash
+# Pastikan virtual environment aktif
+source venv/bin/activate
+
+# Install ulang dependencies
+pip3 install -r requirements.txt
+```
+
+**CoinGecko API rate limit?**
+- App menggunakan in-memory cache (TTL 5 menit) untuk menghindari rate limit
+- Demo tier CoinGecko: ~10-30 request/menit
+- Jika limit tercapai, tunggu beberapa menit dan refresh halaman
+
+**Database error?**
+```bash
+# Hapus database lama dan biarkan app membuat yang baru
+rm instance/users.db
+python3 app.py
+```
 
 > **Catatan:** Port 5050 digunakan karena port default Flask (5000) sering dipakai macOS AirPlay Receiver.
 
@@ -104,10 +221,16 @@ crypto_tracker/
 
 | Role | Username | Password | Status |
 |---|---|---|---|
-| Admin | `admin` | `Admin1234` | Approved |
-| User | `reporter_test` | `ReportTest123` | Approved |
+| Admin | `admin` | `Admin1234` | Approved — Full access (dashboard + admin panel) |
+| User | `reporter_test` | `ReportTest123` | Approved — Dashboard + watchlist |
 
 > **Catatan:** Akun `admin` dibuat langsung via SQL insert (tanpa registrasi) sehingga `created_at = NULL`. Error page fix sudah diterapkan untuk menangani case ini.
+
+### Alur Registrasi Normal
+1. User register di `/register` → akun berstatus `is_approved=False`
+2. User belum bisa login sampai admin approve di `/admin`
+3. Admin login → ke `/admin` → klik **Approve** pada user yang pending
+4. User sekarang bisa login dengan kredensial yang sudah didaftarkan
 
 ---
 
