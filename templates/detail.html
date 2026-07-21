@@ -14,12 +14,14 @@
     {% if current_user.is_authenticated %}
         {% if in_watchlist %}
             <form action="{{ url_for('watchlist_remove', coin_id=coin.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="watchlist-btn in-watchlist" style="font-size:14px;">
                     <i data-lucide="heart" class="icon-heart-filled"></i> In Watchlist
                 </button>
             </form>
         {% else %}
             <form action="{{ url_for('watchlist_add', coin_id=coin.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="watchlist-btn" style="font-size:14px;">
                     <i data-lucide="heart" class="icon-heart"></i> Add to Watchlist
                 </button>

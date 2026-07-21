@@ -8,192 +8,64 @@
     <p class="page-subtitle">Real-time prices and market data powered by CoinGecko</p>
 </div>
 
-<form class="search-form" method="GET" action="{{ url_for('index') }}">
+{# Market Overview Stats #}
+{% if global_data %}
+<div class="market-overview">
+    <div class="overview-card">
+        <div class="overview-label">Total Market Cap</div>
+        <div class="overview-value">{{ format_market_cap(global_data.get('total_market_cap', {}).get('usd', 0)) }}</div>
+    </div>
+    <div class="overview-card">
+        <div class="overview-label">24h Volume</div>
+        <div class="overview-value">{{ format_market_cap(global_data.get('total_volume', {}).get('usd', 0)) }}</div>
+    </div>
+    <div class="overview-card">
+        <div class="overview-label">Active Cryptocurrencies</div>
+        <div class="overview-value">{{ global_data.get('active_cryptocurrencies', 0) }}</div>
+    </div>
+    <div class="overview-card">
+        <div class="overview-label">BTC Dominance</div>
+        <div class="overview-value">{{ "%.1f"|format(global_data.get('market_cap_percentage', {}).get('btc', 0)) }}%</div>
+    </div>
+</div>
+{% endif %}
+
+{# Search — redirects to /market #}
+<form class="search-form" method="GET" action="{{ url_for('market') }}">
     <input type="text" name="search" class="search-input"
            placeholder="Search coins (e.g., Bitcoin, Ethereum, SOL)..."
-           value="{{ search_query }}">
+           value="">
     <button type="submit" class="btn btn-primary">Search</button>
-    {% if is_search %}
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Clear</a>
-    {% endif %}
 </form>
 
-{# --- SIGNAL FILTER (logged-in users only, non-search) --- #}
-{% if current_user.is_authenticated and not is_search %}
-<div class="signal-filter-bar">
-    <span class="signal-filter-label">Filter by Signal:</span>
-    {% set signals = ['ALL', 'STRONG BUY', 'BUY', 'SELL', 'STRONG SELL', 'HOLD'] %}
-    {% for sig in signals %}
-        {% set is_active = (signal_filter == sig) or (not signal_filter and sig == 'ALL') %}
-        <a href="{{ url_for('index', page=1, signal=sig, search='') }}"
-           class="signal-filter-btn {% if is_active %}active{% endif %}">
-            {{ sig }}
-        </a>
-    {% endfor %}
-</div>
-{% endif %}
-
-{% if is_search %}
-<div class="table-wrapper">
-    <table class="coin-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Coin</th>
-                <th></th>
-                {% if current_user.is_authenticated %}
-                <th>Watchlist</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for coin in coins %}
-            <tr>
-                <td><span class="rank">{{ loop.index }}</span></td>
-                <td>
-                    <div class="coin-info">
-                        <img src="{{ coin.get('thumb', '') }}" alt="{{ coin.name }}" class="coin-image">
-                        <div>
-                            <div class="coin-name">{{ coin.name }}</div>
-                            <div class="coin-symbol">{{ coin.symbol }}</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="action-cell">
-                    <a href="{{ url_for('coin_detail', coin_id=coin.id) }}" class="btn-sm">Details</a>
-                </td>
-                {% if current_user.is_authenticated %}
-                <td>
-                    {% if coin.id in user_watchlist_ids %}
-                    <form action="{{ url_for('watchlist_remove', coin_id=coin.id) }}" method="POST">
-                        <button type="submit" class="watchlist-btn in-watchlist" title="Remove from watchlist"><i data-lucide="heart" class="icon-heart-filled"></i></button>
-                    </form>
-                    {% else %}
-                    <form action="{{ url_for('watchlist_add', coin_id=coin.id) }}" method="POST">
-                        <button type="submit" class="watchlist-btn" title="Add to watchlist"><i data-lucide="heart" class="icon-heart"></i></button>
-                    </form>
-                    {% endif %}
-                </td>
-                {% endif %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<div class="table-wrapper">
-    <table class="coin-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Coin</th>
-                <th>Price</th>
-                <th>24h</th>
-                <th>Market Cap</th>
-                <th>Volume (24h)</th>
-                {% if current_user.is_authenticated %}
-                <th>Signal</th>
-                <th>Watchlist</th>
-                {% endif %}
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for coin in coins %}
-            {% set coin_signal = user_signals.get(coin.id) if current_user.is_authenticated else None %}
-            <tr>
-                <td><span class="rank">{{ coin.market_cap_rank or loop.index }}</span></td>
-                <td>
-                    <div class="coin-info">
-                        <img src="{{ coin.image }}" alt="{{ coin.name }}" class="coin-image">
-                        <div>
-                            <div class="coin-name">{{ coin.name }}</div>
-                            <div class="coin-symbol">{{ coin.symbol }}</div>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <span class="price">{{ format_number(coin.current_price) }}</span>
-                </td>
-                <td>
-                    {% if coin.price_change_percentage_24h is not none %}
-                        <span class="change {% if coin.price_change_percentage_24h >= 0 %}positive{% else %}negative{% endif %}">
-                            {% if coin.price_change_percentage_24h >= 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_24h) }}%
-                        </span>
-                    {% else %}
-                        <span class="change">N/A</span>
-                    {% endif %}
-                </td>
-                <td class="market-cap">{{ format_market_cap(coin.market_cap) }}</td>
-                <td class="volume">{{ format_market_cap(coin.total_volume) }}</td>
-                {% if current_user.is_authenticated %}
-                <td>
-                    {% if coin_signal %}
-                        {% if coin_signal.signal == 'STRONG BUY' %}
-                            <span class="signal-badge signal-strong-buy">{{ coin_signal.signal }}</span>
-                            <span class="signal-pct positive">+{{ "%.1f"|format(coin_signal.predicted_change_pct) }}%</span>
-                        {% elif coin_signal.signal == 'BUY' %}
-                            <span class="signal-badge signal-buy">{{ coin_signal.signal }}</span>
-                            <span class="signal-pct positive">+{{ "%.1f"|format(coin_signal.predicted_change_pct) }}%</span>
-                        {% elif coin_signal.signal == 'STRONG SELL' %}
-                            <span class="signal-badge signal-strong-sell">{{ coin_signal.signal }}</span>
-                            <span class="signal-pct negative">{{ "%.1f"|format(coin_signal.predicted_change_pct) }}%</span>
-                        {% elif coin_signal.signal == 'SELL' %}
-                            <span class="signal-badge signal-sell">{{ coin_signal.signal }}</span>
-                            <span class="signal-pct negative">{{ "%.1f"|format(coin_signal.predicted_change_pct) }}%</span>
-                        {% else %}
-                            <span class="signal-badge signal-hold">{{ coin_signal.signal }}</span>
-                            <span class="signal-pct neutral">{{ "%.1f"|format(coin_signal.predicted_change_pct) }}%</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="signal-badge signal-hold">--</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if coin.id in user_watchlist_ids %}
-                    <form action="{{ url_for('watchlist_remove', coin_id=coin.id) }}" method="POST">
-                        <button type="submit" class="watchlist-btn in-watchlist" title="Remove from watchlist"><i data-lucide="heart" class="icon-heart-filled"></i></button>
-                    </form>
-                    {% else %}
-                    <form action="{{ url_for('watchlist_add', coin_id=coin.id) }}" method="POST">
-                        <button type="submit" class="watchlist-btn" title="Add to watchlist"><i data-lucide="heart" class="icon-heart"></i></button>
-                    </form>
-                    {% endif %}
-                </td>
-                {% endif %}
-                <td class="action-cell">
-                    <a href="{{ url_for('coin_detail', coin_id=coin.id) }}" class="btn-sm">Details</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
-
-{% if not is_search %}
-<nav class="pagination">
-    {% if page > 1 %}
-    <a href="{{ url_for('index', page=page-1, signal=signal_filter or 'ALL') }}"><- Prev</a>
-    {% else %}
-    <span class="disabled"><- Prev</span>
+{# CTA #}
+<div class="landing-cta">
+    <a href="{{ url_for('market') }}" class="btn btn-primary btn-lg">
+        <i data-lucide="bar-chart-2"></i> View All Markets
+    </a>
+    {% if not current_user.is_authenticated %}
+    <a href="{{ url_for('register') }}" class="btn btn-secondary btn-lg">
+        <i data-lucide="user-plus"></i> Create Account for Signals
+    </a>
     {% endif %}
+</div>
 
-    {% for p in range(1, total_pages + 1) %}
-        {% if p >= page - 2 and p <= page + 2 %}
-            {% if p == page %}
-            <span class="current">{{ p }}</span>
-            {% else %}
-            <a href="{{ url_for('index', page=p, signal=signal_filter or 'ALL') }}">{{ p }}</a>
-            {% endif %}
-        {% endif %}
-    {% endfor %}
-
-    {% if page < total_pages %}
-    <a href="{{ url_for('index', page=page+1, signal=signal_filter or 'ALL') }}">Next -></a>
-    {% else %}
-    <span class="disabled">Next -></span>
-    {% endif %}
-</nav>
-{% endif %}
+{# Feature highlights #}
+<div class="landing-features">
+    <div class="feature-card">
+        <i data-lucide="shield-check" class="feature-icon"></i>
+        <h3>Secure Tracking</h3>
+        <p>Monitor your favorite cryptocurrencies with real-time data</p>
+    </div>
+    <div class="feature-card">
+        <i data-lucide="trending-up" class="feature-icon"></i>
+        <h3>ML Predictions</h3>
+        <p>Linear regression signals on every coin detail page</p>
+    </div>
+    <div class="feature-card">
+        <i data-lucide="heart" class="feature-icon"></i>
+        <h3>Watchlist</h3>
+        <p>Create an account to save favorite coins and track signals</p>
+    </div>
+</div>
 {% endblock %}

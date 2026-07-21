@@ -8,9 +8,10 @@
         <h1 class="page-title">Admin Dashboard</h1>
         <p class="page-subtitle">Manage user registrations and permissions</p>
     </div>
-    <button class="btn btn-primary" onclick="openCreateModal()">
-        + Create User
-    </button>
+    <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('admin_api_keys') }}" class="btn btn-secondary" style="text-decoration:none;">API Keys</a>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ Create User</button>
+    </div>
 </div>
 
 {# ---- STATS ---- #}
@@ -63,10 +64,12 @@
                     <td>
                         <div class="action-btns">
                             <form action="{{ url_for('admin_approve', user_id=user.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-approve">Approve</button>
                             </form>
-                            <form action="{{ url_for('admin_reject', user_id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Reject and remove {{ user.username }}?');">
-                                <button type="submit" class="btn btn-sm btn-reject">Reject</button>
+                            <form action="{{ url_for('admin_reject', user_id=user.id) }}" method="POST" style="display:inline;" data-confirm="Reject and remove {{ user.username }}?">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-reject btn-confirm">Reject</button>
                             </form>
                         </div>
                     </td>
@@ -125,12 +128,14 @@
                                 <button type="button" class="btn btn-sm btn-secondary">Edit</button>
                             </a>
                             <form action="{{ url_for('admin_toggle_admin', user_id=user.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-secondary">
                                     {% if user.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
                                 </button>
                             </form>
-                            <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user {{ user.username }}? This cannot be undone.');">
-                                <button type="submit" class="btn btn-sm btn-reject">Delete</button>
+                            <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="POST" style="display:inline;" data-confirm="Delete user {{ user.username }}? This cannot be undone.">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-reject btn-confirm">Delete</button>
                             </form>
                         </div>
                     </td>
@@ -176,10 +181,11 @@
         </div>
 
         <form method="POST" action="{{ url_for('admin_create_user') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="cu_username">Username</label>
                 <input type="text" id="cu_username" name="username"
-                       placeholder="Min. 3 characters" minlength="3" required
+                       placeholder="Min. 3 characters, alphanumeric + _ . -" minlength="3" required
                        style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: var(--input-bg, #fff); color: var(--text-color, #1a1a2e); font-size: 14px; box-sizing: border-box;">
             </div>
 
@@ -193,7 +199,7 @@
             <div class="form-group">
                 <label for="cu_password">Password</label>
                 <input type="password" id="cu_password" name="password"
-                       placeholder="Min. 6 characters" minlength="6" required
+                       placeholder="Min. 8 characters" minlength="8" required
                        style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: var(--input-bg, #fff); color: var(--text-color, #1a1a2e); font-size: 14px; box-sizing: border-box;">
             </div>
 
@@ -227,6 +233,16 @@ function closeCreateModal() {
 // Close modal on backdrop click
 document.getElementById('createModal').addEventListener('click', function(e) {
     if (e.target === this) closeCreateModal();
+});
+// Confirm dialogs via data attribute (avoid inline JS with user content)
+document.querySelectorAll('.btn-confirm').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        var form = btn.closest('form');
+        var msg = form ? form.dataset.confirm : 'Continue?';
+        if (!confirm(msg)) {
+            e.preventDefault();
+        }
+    });
 });
 </script>
 {% endblock %}

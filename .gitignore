@@ -1,8 +1,34 @@
+# Environment
+.env
+.env.local
+*.db
+
+# Python
 __pycache__/
 *.pyc
-app_no_debug.py
 *.pyo
 env/
 venv/
-.env
-*.db
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docs build
+docs/_build/

@@ -2,268 +2,267 @@
 
 Aplikasi pelacak harga cryptocurrency berbasis Flask dengan fitur Machine Learning untuk prediksi harga dan sistem autentikasi pengguna.
 
+> **Nama:** Bemis Huntala | **NIM:** 1002240018 | **ITTS 2026**
+
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
 
-## Fitur
+## About
 
-### Fitur Utama
-- **Harga Real-Time** — Data harga cryptocurrency dari [CoinGecko API](https://www.coingecko.com/en/api) (demo tier, tanpa API key)
-- **Visualisasi Chart** — Grafik interaktif 7/30/90 hari menggunakan Chart.js
-- **Prediksi Machine Learning** — Prediksi harga 7 hari ke depan menggunakan Linear Regression + RSI + SMA + Bollinger Bands
-- **Watchlist Personal** — Simpan koin favorit untuk dilacak per user
-- **Dark/Light Mode** — Tema otomatis mengikuti preferensi session
-- **Autentikasi** — Register, Login, Logout dengan password hashing PBKDF2-SHA256
-- **Admin Panel** — CRUD lengkap untuk manajemen user (Create, Read, Update, Delete)
-- **Halaman Error Kustom** — Error page untuk 404, 403, 405, 500 dengan desain konsisten
+CryptoTracker BMZ adalah aplikasi web untuk melacak harga cryptocurrency secara real-time menggunakan data dari [CoinGecko API](https://www.coingecko.com/en/api). Aplikasi ini dilengkapi dengan fitur Machine Learning untuk prediksi harga jangka pendek dan sistem autentikasi pengguna dengan role (admin/user).
 
-### Screenshots
-Lihat folder `docs/` untuk dokumentasi lengkap.
-
----
-
-## Tech Stack
+### Tech Stack
 
 | Layer | Teknologi |
 |---|---|
 | Backend | Flask 3.0+ |
 | Database | SQLite via Flask-SQLAlchemy |
-| Auth | Flask-Login (session-based) |
+| Auth | Flask-Login (session-based) + PBKDF2-SHA256 |
 | ML | scikit-learn (LinearRegression, RSI, SMA, Bollinger Bands) |
+| API | CoinGecko (free tier + multi-key fallback) |
 | Visualisasi | Chart.js 4.4 |
 | Frontend | Jinja2 Templates + Vanilla JS |
 | Icons | Lucide Icons |
-| Font | IBM Plex Sans |
-| API | CoinGecko (demo tier) |
 
 ---
 
-## Cara Menjalankan Aplikasi
+## Features
 
-### Tahapan Lengkap
+### Core Features
+- **Harga Real-Time** — Data harga dari CoinGecko API dengan cache 2 menit
+- **Market Overview** — Statistik pasar global (total market cap, volume, BTC dominance)
+- **Visualisasi Chart** — Grafik interaktif 7/30/90 hari menggunakan Chart.js
+- **Prediksi Machine Learning** — Prediksi 7 hari ke depan:
+  - Linear Regression + R² confidence score
+  - RSI (Relative Strength Index)
+  - SMA Crossover (SMA-7 vs SMA-30)
+  - Bollinger Bands (upper/middle/lower)
+  - Overall Signal (STRONG BUY / BUY / HOLD / SELL / STRONG SELL)
+- **Watchlist Personal** — Simpan koin favorit (login required)
+- **Dark/Light Mode** — Toggle tema, persist di session
+- **Trending Coins** — 7 koin trending dari CoinGecko
 
-#### 1. Persiapan Lingkungan
+### Authentication & Authorization
+- Register dengan approval admin (pending user system)
+- Login/Logout dengan password hashing PBKDF2-SHA256
+- Role-based access: Admin vs Regular User
+- Password change & profile edit
+
+### Admin Panel
+- **User Management** — Create, Read, Update, Delete user
+- **Pending Approval** — Approve/reject user registrations
+- **Toggle Admin** — Promote/demote user jadi admin
+- **API Key Management** — Add/remove runtime API keys tanpa restart app
+
+### Multi-Key Fallback System
+- Mendukung multiple API key CoinGecko
+- Otomatis switch ke key berikutnya saat rate-limited
+- Runtime key management via admin panel (tanpa restart)
+- Fallback message jika semua key rate-limited
+
+---
+
+## Installation & Setup
+
+### Prerequisites
+
+- Python 3.9+
+- Internet connection (untuk CoinGecko API)
+- macOS/Linux/Windows
+
+### Steps
 
 ```bash
-# Pastikan Python 3.9+ terinstall
-python3 --version
-```
-
-#### 2. Clone Repository
-
-```bash
+# 1. Clone repository
 git clone https://github.com/bmzashura/crypto_tracker.git
 cd crypto_tracker
-```
 
-#### 3. Buat Virtual Environment (Opsional tapi Disarankan)
-
-```bash
-# Membuat virtual environment
+# 2. Buat virtual environment (recommended)
 python3 -m venv venv
+source venv/bin/activate        # macOS/Linux
+# venv\Scripts\activate         # Windows
 
-# Aktifkan virtual environment
-source venv/bin/activate        # macOS / Linux
-# venv\Scripts\activate         # Windows (CMD)
-# venv\Scripts\Activate.ps1    # Windows (PowerShell)
-
-# Jika menggunakan zsh/bash di macOS, aktifkan dengan:
-# source venv/bin/activate
-```
-
-#### 4. Install Dependencies
-
-```bash
-# Upgrade pip terlebih dahulu (opsional)
+# 3. Install dependencies
 pip3 install --upgrade pip
-
-# Install semua dependencies dari requirements.txt
 pip3 install -r requirements.txt
-```
 
-**Daftar dependencies** (`requirements.txt`):
-| Package | Fungsi |
-|---|---|
-| `flask` | Web framework |
-| `flask-sqlalchemy` | ORM database |
-| `flask-login` | Session-based authentication |
-| `werkzeug` | Password hashing |
-| `requests` | HTTP client untuk CoinGecko API |
-| `numpy` | Komputasi numerik untuk ML |
-| `scikit-learn` | Machine Learning (LinearRegression, RSI, SMA, Bollinger) |
+# 4. Setup environment variable (API key)
+# Buat file .env di root folder:
+cp .env.example .env
+# Edit .env dan isi COINGECKO_API_KEY dengan key CoinGecko kamu
 
-#### 5. Jalankan Aplikasi
-
-```bash
-# Jalankan Flask app
+# 5. Jalankan aplikasi
 python3 app.py
+# Atau dengan dotenv:
+source .env && python3 app.py
 ```
+
+**File `.env` yang diperlukan:**
+
+```env
+SECRET_KEY=ubah_dengan_secret_key_random_kamu
+COINGECKO_API_KEY=CG-your_api_key_di_sini
+COINGECKO_API_KEY_2=                # opsional, key kedua untuk fallback
+MARKET_CACHE_TTL=120
+API_TIMEOUT=10
+```
+
+> **Catatan:** Dapatkan API key gratis di [coingecko.com](https://www.coingecko.com). Free tier: 30 requests/menit.
 
 **Output yang diharapkan:**
+
 ```
 Starting CryptoTracker Flask App...
-API Key: CG-aop5s5...
+API Key loaded: CG-aop...
 Database initialized.
  * Running on http://127.0.0.1:5050/
 ```
 
-#### 6. Akses Aplikasi
-
-Buka browser dan navigasi ke:
-```
-http://127.0.0.1:5050
-```
-
-**Halaman yang tersedia:**
-| URL | Deskripsi |
-|---|---|
-| `/` | Homepage — daftar harga koin |
-| `/login` | Halaman login |
-| `/register` | Halaman registrasi |
-| `/dashboard` | Dashboard user (login required) |
-| `/profile` | Edit profil (login required) |
-| `/change-password` | Ganti password (login required) |
-| `/admin` | Panel admin (admin only) |
-| `/about` | About + dokumentasi ML |
-| `/coin/<coin_id>` | Detail koin + chart + ML |
-
-#### 7. Login dengan Akun Default
-
-Buka `http://127.0.0.1:5050/login` dan gunakan kredensial berikut:
+### Default Credentials
 
 | Role | Username | Password |
 |---|---|---|
 | Admin | `admin` | `Admin1234` |
 | User | `reporter_test` | `ReportTest123` |
 
-> **Catatan Penting:** Akun baru yang register memerlukan approval dari admin sebelum bisa login. Login sebagai admin dulu, lalu approve user baru di `/admin`.
+> Akun baru yang register memerlukan approval dari admin sebelum bisa login.
 
-#### 8. Menghentikan Aplikasi
+### Access URLs
 
-```bash
-# Tekan Ctrl+C di terminal yang menjalankan Flask
+| URL | Deskripsi |
+|---|---|
+| `/` | Landing page — global stats + CTA |
+| `/market` | Daftar lengkap semua koin (paginated) |
+| `/coin/<id>` | Detail koin + chart + ML prediction |
+| `/dashboard` | Watchlist + trending + market overview |
+| `/about` | About + dokumentasi ML |
+| `/login` | Login |
+| `/register` | Registrasi |
+| `/admin` | Admin panel (admin only) |
+| `/admin/api-keys` | Manage API keys (admin only) |
 
-# Atau jika di background:
-pkill -f "python3 app.py"
+---
+
+## Project Structure
+
+```
+crypto_tracker/
+├── app.py                      # Flask app — routes, auth, API calls
+├── config.py                   # Flask config + COINGECKO_API_KEYS list
+├── ml_model.py                 # ML: LinearRegression, RSI, SMA, Bollinger Bands
+├── requirements.txt            # Python dependencies
+├── .env                        # Environment variables (gitignored)
+├── api_keys.json               # Runtime API keys (auto-created, gitignored)
+├── docs/                       # Dokumentasi tambahan
+│   ├── ML_PREDICTION.md
+│   └── API_DOCUMENTATION.md
+├── instance/
+│   └── users.db               # SQLite database (auto-created)
+├── services/
+│   ├── __init__.py
+│   ├── cache_service.py       # In-memory cache dengan TTL
+│   └── coingecko_service.py   # CoinGecko API wrapper + multi-key fallback
+├── static/
+│   └── css/
+│       └── style.css          # Design system (light + dark theme)
+└── templates/
+    ├── base.html               # Base template (navbar, footer, flash messages)
+    ├── index.html              # Landing page — global stats + CTA
+    ├── market.html             # Full coin list dengan search & sort
+    ├── detail.html             # Coin detail + chart + ML indicators
+    ├── dashboard.html          # Watchlist + trending + market overview
+    ├── profile.html            # Edit profil user
+    ├── change_password.html    # Ganti password
+    ├── admin.html              # Admin panel — user management
+    ├── admin_api_keys.html     # Admin panel — API key management
+    ├── admin_edit.html         # Form edit user
+    ├── login.html              # Login page
+    ├── register.html           # Registrasi page
+    ├── about.html              # About + ML documentation
+    └── error.html              # Custom error pages (404, 403, 405, 500)
 ```
 
-#### 9. Troubleshooting
+### Services Architecture
+
+```
+services/
+├── cache_service.py
+│   └── In-memory cache dengan TTL per endpoint.
+│       Mengurangi CoinGecko API calls dan rate limit.
+│
+└── coingecko_service.py
+    ├── fetch_coins()          # /coins/markets
+    ├── fetch_coin_detail()    # /coins/{id}
+    ├── fetch_price_history()  # /coins/{id}/market_chart
+    ├── fetch_market_by_ids()  # /coins/markets (by ids)
+    ├── fetch_search()          # /search
+    ├── fetch_trending()        # /search/trending
+    ├── fetch_global_stats()    # /global
+    │
+    └── _get_with_fallback()   # Internal: coba semua keys sampai success
+```
+
+---
+
+## ML Prediction Documentation
+
+### Algorithm: Linear Regression
+
+1. Ambil 30 hari data harga historis
+2. Train LinearRegression model (X = day index, y = price)
+3. Predict 7 hari ke depan
+4. Calculate R² score untuk confidence
+
+### Signal Classification
+
+| Signal | Condition |
+|---|---|
+| **STRONG BUY** | predicted_change > 10% AND R² > 0.7 |
+| **BUY** | predicted_change > 5% AND R² > 0.5 |
+| **HOLD** | -5% <= predicted_change <= 5% |
+| **SELL** | predicted_change < -5% AND R² > 0.5 |
+| **STRONG SELL** | predicted_change < -10% AND R² > 0.7 |
+
+### Technical Indicators
+
+| Indicator | Description |
+|---|---|
+| **RSI** | 0-100, overbought > 70, oversold < 30 |
+| **SMA Crossover** | SMA-7 vs SMA-30, bullish/bearish crossover |
+| **Bollinger Bands** | Upper/middle/lower band berdasarkan 20-day std dev |
+
+---
+
+## Troubleshooting
 
 **Port 5050 sudah digunakan?**
 ```bash
-# Cari proses yang menggunakan port 5050
 lsof -ti:5050
-
-# Kill proses tersebut
 kill -9 <PID>
-
-# Atau ganti port di app.py baris terakhir:
-# app.run(debug=True, port=5051)
 ```
 
-**Error "No module named flask"?**
-```bash
-# Pastikan virtual environment aktif
-source venv/bin/activate
-
-# Install ulang dependencies
-pip3 install -r requirements.txt
-```
-
-**CoinGecko API rate limit?**
-- App menggunakan in-memory cache (TTL 5 menit) untuk menghindari rate limit
-- Demo tier CoinGecko: ~10-30 request/menit
-- Jika limit tercapai, tunggu beberapa menit dan refresh halaman
+**CoinGecko rate limit?**
+- Cache TTL 120 detik — tunggu sebentar lalu refresh
+- Tambah API key kedua via `/admin/api-keys` (tanpa restart)
+- Semua key rate-limited → tunggu 1 menit
 
 **Database error?**
 ```bash
-# Hapus database lama dan biarkan app membuat yang baru
 rm instance/users.db
 python3 app.py
 ```
 
-> **Catatan:** Port 5050 digunakan karena port default Flask (5000) sering dipakai macOS AirPlay Receiver.
-
----
-
-## Struktur Direktori
-
-```
-crypto_tracker/
-├── app.py              # Flask app — routes, auth, API calls
-├── ml_model.py         # ML: LinearRegression, RSI, SMA, Bollinger Bands
-├── requirements.txt    # Python dependencies
-├── instance/
-│   └── users.db        # SQLite database (auto-created)
-├── static/
-│   └── css/
-│       └── style.css   # Design system (light + dark theme)
-└── templates/
-    ├── base.html       # Base template (navbar, footer, theme toggle)
-    ├── index.html      # Homepage — daftar koin
-    ├── detail.html     # Detail koin + chart + ML indicators
-    ├── dashboard.html  # Dashboard — watchlist, market overview
-    ├── profile.html    # Edit profil user
-    ├── admin.html      # Admin panel — manajemen user
-    ├── admin_edit.html # Form edit user
-    ├── login.html      # Halaman login
-    ├── register.html   # Halaman registrasi
-    ├── about.html       # About + dokumentasi ML
-    └── error.html      # Custom error pages
+**Import error "No module named"?**
+```bash
+source venv/bin/activate
+pip3 install -r requirements.txt
 ```
 
 ---
 
-## Kredensial Default
-
-| Role | Username | Password | Status |
-|---|---|---|---|
-| Admin | `admin` | `Admin1234` | Approved — Full access (dashboard + admin panel) |
-| User | `reporter_test` | `ReportTest123` | Approved — Dashboard + watchlist |
-
-> **Catatan:** Akun `admin` dibuat langsung via SQL insert (tanpa registrasi) sehingga `created_at = NULL`. Error page fix sudah diterapkan untuk menangani case ini.
-
-### Alur Registrasi Normal
-1. User register di `/register` → akun berstatus `is_approved=False`
-2. User belum bisa login sampai admin approve di `/admin`
-3. Admin login → ke `/admin` → klik **Approve** pada user yang pending
-4. User sekarang bisa login dengan kredensial yang sudah didaftarkan
-
----
-
-## Dokumentasi ML
-
-Dokumentasi lengkap algoritma Machine Learning tersedia di:
-- `docs/ML_PREDICTION.md` — Mekanisme prediksi Linear Regression
-- `docs/API_DOCUMENTATION.md` — Dokumentasi API internal dan CoinGecko endpoints
-- `docs/SOP_CryptoTracker_BMZ_API_Usage.md` — Panduan penggunaan API
-
-### Indikator ML
-
-1. **Linear Regression** — Prediksi harga 7 hari ke depan berdasarkan data 30 hari terakhir. Signal: STRONG BUY / BUY / HOLD / SELL / STRONG SELL.
-2. **RSI (Relative Strength Index)** — Momentum oscillator (0-100). RSI > 70 = Overbought, RSI < 30 = Oversold.
-3. **SMA Crossover** — SMA-7 vs SMA-30. SMA-7 > SMA-30 + 1% = BULLISH, SMA-7 < SMA-30 - 1% = BEARISH.
-4. **Bollinger Bands** — Upper/Lower band berdasarkan volatilitas. Price > upper = strong buy signal.
-5. **Overall Signal** — Kombinasi semua indikator di atas.
-
----
-
-## API Endpoints CoinGecko
-
-| Endpoint | Fungsi |
-|---|---|
-| `GET /coins/markets` | Daftar koin dengan market data |
-| `GET /coins/{id}` | Detail satu koin |
-| `GET /coins/{id}/market_chart` | Data harga historical |
-| `GET /search` | Pencarian koin |
-| `GET /search/trending` | Koin trending |
-| `GET /global` | Statistik pasar global |
-
----
-
-## Lisensi
+## License
 
 MIT License — Bemis Huntala, NIM 1002240018, ITTS 2026

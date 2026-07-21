@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}API Keys - CryptoTracker Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">API Key Management</h1>
+    <p class="page-subtitle">Kelola API keys untuk CoinGecko (fallback saat rate limit)</p>
+</div>
+
+{# Flash messages #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flashes">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+{# Config Keys (from .env) #}
+<div class="admin-section">
+    <h2 class="section-title">Config Keys (.env)</h2>
+    <p class="section-desc">Keys dari file <code>.env</code>. Edit file untuk ubah, restart app untuk apply.</p>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>API Key</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key in config_keys %}
+            <tr>
+                <td><code>{{ mask_key(key) }}</code></td>
+                <td><span class="badge badge-primary">Active</span></td>
+            </tr>
+            {% endfor %}
+            {% if not config_keys %}
+            <tr><td colspan="2" class="text-muted">Tidak ada key dari config.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{# Runtime Keys (admin-managed) #}
+<div class="admin-section">
+    <h2 class="section-title">Runtime Keys</h2>
+    <p class="section-desc">Keys yang ditambahkan via admin panel. Tidak perlu restart. Tapi akan reset saat app di-restart.</p>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>API Key</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key in runtime_keys %}
+            <tr>
+                <td><code>{{ mask_key(key) }}</code></td>
+                <td>
+                    <form action="{{ url_for('admin_api_keys_remove', key=key) }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus key ini?')">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not runtime_keys %}
+            <tr><td colspan="2" class="text-muted">Tidak ada runtime key.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {# Add new key form #}
+    <div class="add-key-form">
+        <h3>Tambah API Key Baru</h3>
+        <form method="POST" action="{{ url_for('admin_api_keys_add') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row">
+                <input type="text" name="api_key" class="form-input" 
+                       placeholder="Masukkan API key CoinGecko..." required minlength="10">
+                <button type="submit" class="btn btn-primary">Tambah</button>
+            </div>
+        </form>
+        <p class="form-note">
+            Dapatkan API key gratis di <a href="https://www.coingecko.com" target="_blank">coingecko.com</a> 
+            (free tier: 30 calls/menit). Demo key memiliki batas sangat ketat.
+        </p>
+    </div>
+</div>
+
+{# Stats #}
+<div class="admin-section">
+    <h2 class="section-title">Statistik</h2>
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value">{{ all_keys|length }}</div>
+            <div class="stat-label">Total Keys</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ config_keys|length }}</div>
+            <div class="stat-label">Config Keys</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ runtime_keys|length }}</div>
+            <div class="stat-label">Runtime Keys</div>
+        </div>
+    </div>
+    <p class="section-desc">
+        Fallback: saat 1 key rate-limited, system otomatis coba key berikutnya. 
+        Key pertama yang tidak rate-limited akan digunakan.
+    </p>
+</div>
+
+<style>
+.admin-section { background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.section-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.section-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+.admin-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+.admin-table th { text-align: left; padding: 10px 14px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border-light); }
+.admin-table td { padding: 10px 14px; border-top: 1px solid var(--border-light); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-primary { background: rgba(113, 50, 245, 0.15); color: var(--primary); }
+.btn-danger { background: var(--red-text); color: white; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+.btn-danger:hover { opacity: 0.85; }
+.btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; }
+code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.add-key-form { background: var(--bg-secondary); border-radius: 8px; padding: 20px; }
+.add-key-form h3 { font-size: 15px; margin-bottom: 12px; }
+.form-row { display: flex; gap: 12px; align-items: center; }
+.form-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--input-bg, #fff); color: var(--text-primary); font-size: 14px; }
+.form-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+.stat-card { background: var(--bg-secondary); border-radius: 8px; padding: 16px; text-align: center; }
+.stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.text-muted { color: var(--text-muted); font-style: italic; }
+</style>
+{% endblock %}

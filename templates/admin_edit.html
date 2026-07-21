@@ -13,6 +13,7 @@
 
 <div class="auth-container" style="max-width: 500px; margin: 0 auto;">
     <form method="POST" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username"

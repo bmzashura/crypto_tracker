@@ -23,19 +23,25 @@
                     <span>CryptoTracker BMZ</span>
                 </a>
                 <nav class="nav">
-                    <a href="{{ url_for('index') }}" class="nav-link"><i data-lucide="bar-chart-2" class="nav-icon"></i> Markets</a>
+                    <a href="{{ url_for('market') }}" class="nav-link"><i data-lucide="bar-chart-2" class="nav-icon"></i> Markets</a>
                     <a href="{{ url_for('about') }}" class="nav-link"><i data-lucide="info" class="nav-icon"></i> About</a>
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_admin %}
                         <a href="{{ url_for('admin') }}" class="nav-link"><i data-lucide="shield" class="nav-icon"></i> Admin</a>
                         {% endif %}
                         <a href="{{ url_for('dashboard') }}" class="nav-link"><i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard</a>
-                        <a href="{{ url_for('logout') }}" class="nav-link nav-link-highlight"><i data-lucide="log-out" class="nav-icon"></i> Logout</a>
+                        <form method="POST" action="{{ url_for('logout') }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="nav-link nav-link-highlight" style="background:none;border:none;cursor:pointer;color:inherit;font-family:inherit;font-size:inherit;"><i data-lucide="log-out" class="nav-icon"></i> Logout</button>
+                        </form>
                     {% else %}
                         <a href="{{ url_for('login') }}" class="nav-link"><i data-lucide="log-in" class="nav-icon"></i> Login</a>
                         <a href="{{ url_for('register') }}" class="nav-link nav-link-highlight"><i data-lucide="user-plus" class="nav-icon"></i> Register</a>
                     {% endif %}
-                    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" id="themeToggle">
+                    <form method="POST" action="{{ url_for('theme') }}" id="themeForm" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    </form>
+                    <button class="theme-toggle-btn" onclick="document.getElementById('themeForm').submit()" title="Toggle theme" id="themeToggle">
                         <i data-lucide="{{ 'sun' if session.get('theme', 'light') == 'dark' else 'moon' }}" class="theme-icon" id="themeIcon"></i>
                     </button>
                 </nav>
@@ -82,21 +88,6 @@
     {% endwith %}
 
     <script>
-    function toggleTheme() {
-        const html = document.documentElement;
-        const current = html.className || 'light';
-        const next = current === 'dark' ? 'light' : 'dark';
-        html.className = next;
-
-        // Swap icon: dark mode -> sun icon (switch to light), light mode -> moon icon (switch to dark)
-        const icon = document.getElementById('themeIcon');
-        if (icon) {
-            icon.setAttribute('data-lucide', next === 'dark' ? 'sun' : 'moon');
-            lucide.createIcons({ nodes: [icon] });
-        }
-
-        fetch('/theme');
-    }
     // Init Lucide icons on load
     document.addEventListener('DOMContentLoaded', function() {
         lucide.createIcons();
