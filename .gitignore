@@ -6,6 +6,7 @@
 api_keys.json
 instance/api_keys.json
 instance/*.db
+*.db
 
 # Python
 __pycache__/
