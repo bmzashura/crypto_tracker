@@ -55,12 +55,12 @@ CryptoTracker BMZ adalah aplikasi web untuk melacak harga cryptocurrency secara 
 - **User Management** — Create, Read, Update, Delete user
 - **Pending Approval** — Approve/reject user registrations
 - **Toggle Admin** — Promote/demote user jadi admin
-- **API Key Management** — Add/remove runtime API keys tanpa restart app
+- **API Key Management** — Konfigurasi API key via file `.env`
 
 ### Multi-Key Fallback System
 - Mendukung multiple API key CoinGecko
 - Otomatis switch ke key berikutnya saat rate-limited
-- Runtime key management via admin panel (tanpa restart)
+- Konfigurasi API key via file `.env`
 - Fallback message jika semua key rate-limited
 
 ---
@@ -92,9 +92,12 @@ pip3 install -r requirements.txt
 # 4. Setup environment variable (API key)
 # Buat file .env di root folder:
 cp .env.example .env
-# Edit .env dan isi COINGECKO_API_KEY dengan key CoinGecko kamu
+# Edit .env dan isi SECRET_KEY dan COINGECKO_API_KEY
 
-# 5. Jalankan aplikasi
+# 5. Buat folder instance (untuk SQLite database)
+mkdir -p instance
+
+# 6. Jalankan aplikasi
 python3 app.py
 # Atau dengan dotenv:
 source .env && python3 app.py
@@ -142,7 +145,7 @@ Database initialized.
 | `/login` | Login |
 | `/register` | Registrasi |
 | `/admin` | Admin panel (admin only) |
-| `/admin/api-keys` | Manage API keys (admin only) |
+
 
 ---
 
@@ -155,7 +158,6 @@ crypto_tracker/
 ├── ml_model.py                 # ML: LinearRegression, RSI, SMA, Bollinger Bands
 ├── requirements.txt            # Python dependencies
 ├── .env                        # Environment variables (gitignored)
-├── api_keys.json               # Runtime API keys (auto-created, gitignored)
 ├── docs/                       # Dokumentasi tambahan
 │   ├── ML_PREDICTION.md
 │   └── API_DOCUMENTATION.md
@@ -177,7 +179,6 @@ crypto_tracker/
     ├── profile.html            # Edit profil user
     ├── change_password.html    # Ganti password
     ├── admin.html              # Admin panel — user management
-    ├── admin_api_keys.html     # Admin panel — API key management
     ├── admin_edit.html         # Form edit user
     ├── login.html              # Login page
     ├── register.html           # Registrasi page
@@ -246,7 +247,6 @@ kill -9 <PID>
 
 **CoinGecko rate limit?**
 - Cache TTL 120 detik — tunggu sebentar lalu refresh
-- Tambah API key kedua via `/admin/api-keys` (tanpa restart)
 - Semua key rate-limited → tunggu 1 menit
 
 **Database error?**
