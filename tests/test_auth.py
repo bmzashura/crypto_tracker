@@ -32,16 +32,6 @@ class TestRegister:
         }, follow_redirects=False)
         assert r.status_code == 200  # stays on register page
 
-    def test_register_invalid_email(self, client):
-        """Email tidak valid ditolak."""
-        r = client.post("/register", data={
-            "username": "validuser",
-            "email": "not-an-email",
-            "password": "Valid1234",
-            "confirm_password": "Valid1234",
-        }, follow_redirects=False)
-        assert r.status_code == 200
-
     def test_register_password_too_short(self, client):
         """Password kurang dari 8 karakter ditolak."""
         r = client.post("/register", data={

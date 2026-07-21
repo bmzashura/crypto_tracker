@@ -68,6 +68,21 @@ class TestCoinDetail:
             "name": "Bitcoin",
             "symbol": "btc",
             "description": {"en": "Digital currency"},
+            "image": {
+                "large": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+                "small": "https://assets.coingecko.com/coins/images/1/small/bitcoin.png",
+            },
+            "market_data": {
+                "current_price": {"usd": 50000},
+                "market_cap": {"usd": 1000000000000},
+                "total_volume": {"usd": 50000000000},
+                "price_change_percentage_24h": 2.5,
+                "high_24h": {"usd": 51000},
+                "low_24h": {"usd": 49000},
+                "ath": {"usd": 69000},
+                "atl": {"usd": 1000},
+                "max_supply": 21000000,
+            },
         }
         mock_history.return_value = {
             "prices": [[1000000 * i, 50000 + i * 100] for i in range(1, 31)]
@@ -76,11 +91,12 @@ class TestCoinDetail:
         assert r.status_code == 200
 
     def test_detail_invalid_coin(self, client):
-        """Detail page handles invalid coin ID."""
+        """Detail page redirects to /market on invalid coin."""
         with patch.object(cg, "fetch_coin_detail", side_effect=cg.CoinGeckoAPIError("Not found", 404)):
             r = client.get("/coin/nonexistent-coin-xyz")
-            # Should render with error handling, not 500
-            assert r.status_code in (200, 404)
+            # Should redirect to /market with flash error, not 500
+            assert r.status_code == 302
+            assert "/market" in r.location
 
 
 class TestChartDays:

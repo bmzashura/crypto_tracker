@@ -1,9 +1,10 @@
 """
 pytest configuration and fixtures for CryptoTracker BMZ.
-Uses :memory: SQLite for complete test isolation.
+Uses temporary SQLite database per test for complete isolation.
 """
 import os
 import sys
+from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,23 +15,28 @@ from models import User, Watchlist
 
 
 @pytest.fixture(scope="function")
-def app():
-    """Create test app with in-memory SQLite database per test."""
-    os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only-12345"
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-    os.environ["COINGECKO_API_KEY"] = ""
-    os.environ["AUTO_CREATE_DEFAULT_ADMIN"] = "false"
-    os.environ["FLASK_DEBUG"] = "false"
+def app(tmp_path):
+    """Create test app with temporary SQLite database per test."""
+    # Create temporary database file
+    db_path = tmp_path / "test.db"
 
     with patch("app.ensure_default_admin"):
         from app import create_app
         application = create_app()
 
-    application.config["TESTING"] = True
-    # Disable CSRF after create_app() via Flask-WTF extension method
-    application.extensions["csrf"]._csrf_protected = False
+    application.config.update(
+        TESTING=True,
+        WTF_CSRF_ENABLED=False,
+        SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
+        SERVER_NAME="localhost",
+        SECRET_KEY="test-secret-key-for-testing-only-12345",
+        COINGECKO_API_KEY="",
+        AUTO_CREATE_DEFAULT_ADMIN="false",
+        FLASK_DEBUG="false",
+    )
 
     with application.app_context():
+        db.drop_all()
         db.create_all()
 
         admin = User(username="testadmin", email="testadmin@example.com")
@@ -55,18 +61,20 @@ def app():
 
     yield application
 
-    try:
-        with application.app_context():
-            from sqlalchemy.orm import close_all_sessions
-            close_all_sessions()
-            db.engine.dispose()
-    except Exception:
-        pass
+    with application.app_context():
+        db.session.remove()
+        db.drop_all()
 
 
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def app_context(app):
+    with app.app_context():
+        yield
 
 
 @pytest.fixture

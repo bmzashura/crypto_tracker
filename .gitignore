@@ -1,7 +1,11 @@
 # Environment
 .env
 .env.local
-*.db
+.env.*
+!.env.example
+api_keys.json
+instance/api_keys.json
+instance/*.db
 
 # Python
 __pycache__/

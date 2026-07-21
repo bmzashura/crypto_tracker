@@ -10,7 +10,7 @@ https://api.coingecko.com/api/v3
 ```
 
 ### API Key
-Demo key: `REMOVED_API_KEY`
+Demo key: `CG-your_api_key_here`
 > For production, set environment variable: `export COINGECKO_API_KEY='your_api_key'`
 
 ### Endpoints Used
@@ -361,4 +361,4 @@ CoinGecko free demo API has rate limits:
 
 | Variable | Default | Description |
 |---|---|---|
-| `COINGECKO_API_KEY` | `REMOVED_API_KEY` | CoinGecko API key |
+| `COINGECKO_API_KEY` | `CG-your_api_key_here` | CoinGecko API key |

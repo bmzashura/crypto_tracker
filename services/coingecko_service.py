@@ -17,16 +17,20 @@ HEADERS = {}
 _session: Optional[requests.Session] = None
 
 
-def _get_session(api_key: str) -> requests.Session:
-    """Dapatkan atau buat ulang requests session dengan header yang sesuai."""
+def _get_session() -> requests.Session:
+    """Dapatkan atau buat ulang requests session (tanpa menyimpan API key di headers)."""
     global _session
     if _session is None:
         _session = requests.Session()
-    headers = {"Accept": "application/json"}
+    return _session
+
+
+def _build_headers(api_key: str) -> dict:
+    """Build headers per-request. API key tidak disimpan di session global."""
+    headers = {"Accept": "application/json", "User-Agent": "CryptoTracker-UAS/1.0"}
     if api_key:
         headers["x-cg-demo-api-key"] = api_key
-    _session.headers.update(headers)
-    return _session
+    return headers
 
 
 # ─── Custom Exceptions ─────────────────────────────────────────
@@ -63,11 +67,12 @@ class CoinGeckoDataError(CoinGeckoServiceError):
 def _get(api_key: str, url: str, params: dict, timeout: int) -> dict:
     """
     Helper internal untuk melakukan GET request ke CoinGecko.
-    Raises spesifik exception, tidak pernah return None secara diam-diam.
+    Headers dibuat per-request, API key tidak disimpan di session global.
     """
-    session = _get_session(api_key)
+    session = _get_session()
+    headers = _build_headers(api_key)
     try:
-        response = session.get(url, params=params, timeout=timeout)
+        response = session.get(url, params=params, headers=headers, timeout=timeout)
     except requests.exceptions.Timeout as e:
         logger.warning("CoinGecko timeout: %s params=%s", url, params)
         raise CoinGeckoTimeout(f"Request timeout untuk {url}", status_code=None) from e
@@ -79,7 +84,7 @@ def _get(api_key: str, url: str, params: dict, timeout: int) -> dict:
         raise CoinGeckoServiceError(str(e), status_code=None) from e
 
     if response.status_code == 429:
-        logger.warning("CoinGecko rate limit hit for key: %s", api_key[:12] + "...")
+        logger.warning("CoinGecko rate limit hit")
         raise CoinGeckoRateLimit("Rate limit tercapai. Coba lagi nanti.", status_code=429)
     elif response.status_code >= 500:
         logger.warning("CoinGecko server error: %d", response.status_code)
@@ -104,24 +109,19 @@ def _get(api_key: str, url: str, params: dict, timeout: int) -> dict:
 def _get_with_fallback(api_keys: list[str], url: str, params: dict, timeout: int) -> dict:
     """
     Coba semua API keys secara berurutan. Gagal rate limit → coba key berikutnya.
-    Semua key gagal → lempar exception terakhir.
+    Semua key gagal → lempar exception terakhir. Tidak pernah log API key.
     """
-    errors = []
-    tried_keys = []
     for key in api_keys:
         try:
             return _get(key, url, params, timeout)
-        except CoinGeckoRateLimit as e:
-            errors.append(str(e))
-            tried_keys.append(key[:12] + "...")
-            logger.info("Key %s rate-limited, trying next key...", key[:12] + "...")
+        except CoinGeckoRateLimit:
+            logger.info("API key rate-limited, trying next key...")
             continue
         except CoinGeckoServiceError:
             raise  # Non-rate-limit errors — don't try other keys
 
     # Semua key rate-limited
-    tried = ", ".join(tried_keys)
-    raise CoinGeckoRateLimit(f"Semua API key ({tried}) mengalami rate limit. Coba lagi nanti.", status_code=429)
+    raise CoinGeckoRateLimit("Semua API key mengalami rate limit. Coba lagi nanti.", status_code=429)
 
 
 # ─── Public API Functions ──────────────────────────────────────

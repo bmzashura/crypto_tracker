@@ -15,6 +15,8 @@ from flask import (
 )
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
+from werkzeug.exceptions import HTTPException
+from flask_wtf.csrf import CSRFError
 
 # Modular components
 from config import Config
@@ -24,29 +26,8 @@ from decorators import admin_required, count_active_admins
 import validators as V
 from services.cache_service import cache
 import services.coingecko_service as cg
-import json
 
 # ─── Runtime API Key Manager ────────────────────────────────
-_API_KEYS_FILE = os.path.join(os.path.dirname(__file__), "api_keys.json")
-
-def _load_runtime_keys() -> list[str]:
-    try:
-        with open(_API_KEYS_FILE) as f:
-            return json.load(f).get("keys", [])
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-def _save_runtime_keys(keys: list[str]) -> None:
-    with open(_API_KEYS_FILE, "w") as f:
-        json.dump({"keys": keys}, f)
-
-def get_all_api_keys(config_keys: list[str] = None) -> list[str]:
-    """Gabungkan config keys + runtime keys, hapus duplikat & kosong."""
-    runtime_keys = _load_runtime_keys()
-    if config_keys is None:
-        config_keys = []
-    combined = [k for k in config_keys if k] + [k for k in runtime_keys if k and k not in config_keys]
-    return combined or [""]
 from ml_model import (
     get_price_prediction_from_data,
     get_advanced_prediction_from_data,
@@ -169,6 +150,16 @@ def register_error_handlers(app: Flask) -> None:
             message="Metode request tidak diizinkan untuk halaman ini.",
         ), 405
 
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        return render_template(
+            "error.html",
+            error_code="400",
+            error_title="Permintaan Tidak Valid",
+            icon_name="shield-off",
+            message="Token keamanan tidak valid atau telah kedaluwarsa.",
+        ), 400
+
     @app.errorhandler(500)
     def internal_error(e):
         db.session.rollback()
@@ -182,13 +173,22 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(Exception)
     def handle_exception(e):
+        if isinstance(e, HTTPException):
+            return e
+
         app.logger.exception("Unhandled exception: %s", e)
+
+        try:
+            db.session.rollback()
+        except Exception:
+            app.logger.exception("Failed to rollback database session")
+
         return render_template(
             "error.html",
-            error_code="Oops",
-            error_title="Terjadi Kesalahan",
-            icon_name="alert-triangle",
-            message="Terjadi kesalahan yang tidak terduga.",
+            error_code="500",
+            error_title="Kesalahan Server",
+            icon_name="server-off",
+            message="Terjadi kesalahan pada server.",
         ), 500
 
 
@@ -237,7 +237,7 @@ def register_routes(app: Flask) -> None:
             stats = cg.fetch_global_stats(
                 api_key=app.config.get("COINGECKO_API_KEY", ""),
                 timeout=app.config.get("API_TIMEOUT", 10),
-                api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                api_keys=app.config.get("COINGECKO_API_KEYS", []),
             )
         except cg.CoinGeckoRateLimit:
             stats = {}
@@ -281,7 +281,7 @@ def register_routes(app: Flask) -> None:
             try:
                 coins = cg.fetch_coins(
                     api_key=app.config.get("COINGECKO_API_KEY", ""),
-                    api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                    api_keys=app.config.get("COINGECKO_API_KEYS", []),
                     timeout=app.config.get("API_TIMEOUT", 10),
                     per_page=per_page,
                     page=page,
@@ -301,7 +301,7 @@ def register_routes(app: Flask) -> None:
             try:
                 results = cg.fetch_search(
                     api_key=app.config.get("COINGECKO_API_KEY", ""),
-                    api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                    api_keys=app.config.get("COINGECKO_API_KEYS", []),
                     timeout=app.config.get("API_TIMEOUT", 10),
                     query=search_query,
                 )
@@ -340,7 +340,7 @@ def register_routes(app: Flask) -> None:
         try:
             history_data = cg.fetch_price_history(
                 api_key=app.config.get("COINGECKO_API_KEY", ""),
-                    api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                    api_keys=app.config.get("COINGECKO_API_KEYS", []),
                 timeout=app.config.get("API_TIMEOUT", 10),
                 coin_id=coin_id,
                 days=days,
@@ -362,7 +362,7 @@ def register_routes(app: Flask) -> None:
         try:
             coin_data = cg.fetch_coin_detail(
                 api_key=app.config.get("COINGECKO_API_KEY", ""),
-                    api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                    api_keys=app.config.get("COINGECKO_API_KEYS", []),
                 timeout=app.config.get("API_TIMEOUT", 10),
                 coin_id=coin_id,
             )
@@ -442,12 +442,9 @@ def register_routes(app: Flask) -> None:
                 if db.session.query(User).filter_by(username=username).first():
                     errors.append("Username sudah digunakan.")
 
-            v_email = V.validate_email(email)
-            if v_email:
-                errors.append(v_email.message)
-            else:
-                if db.session.query(User).filter_by(email=email).first():
-                    errors.append("Email sudah digunakan.")
+            # Email uniqueness check only (no format validation)
+            if db.session.query(User).filter_by(email=email).first():
+                errors.append("Email sudah digunakan.")
 
             v_pass = V.validate_password_register(password)
             if v_pass:
@@ -541,7 +538,7 @@ def register_routes(app: Flask) -> None:
             try:
                 watchlist_coins = cg.fetch_market_by_ids(
                     api_key=app.config.get("COINGECKO_API_KEY", ""),
-                    api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                    api_keys=app.config.get("COINGECKO_API_KEYS", []),
                     timeout=app.config.get("API_TIMEOUT", 10),
                     coin_ids=coin_ids,
                 )
@@ -549,7 +546,7 @@ def register_routes(app: Flask) -> None:
                     try:
                         hist = cg.fetch_price_history(
                             api_key=app.config.get("COINGECKO_API_KEY", ""),
-                    api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                    api_keys=app.config.get("COINGECKO_API_KEYS", []),
                             timeout=app.config.get("API_TIMEOUT", 10),
                             coin_id=coin["id"],
                             days=30,
@@ -566,7 +563,7 @@ def register_routes(app: Flask) -> None:
             global_data = cg.fetch_global_stats(
                 api_key=app.config.get("COINGECKO_API_KEY", ""),
                 timeout=app.config.get("API_TIMEOUT", 10),
-                api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                api_keys=app.config.get("COINGECKO_API_KEYS", []),
             )
         except cg.CoinGeckoServiceError:
             global_data = {}
@@ -575,7 +572,7 @@ def register_routes(app: Flask) -> None:
             trending = cg.fetch_trending(
                 api_key=app.config.get("COINGECKO_API_KEY", ""),
                 timeout=app.config.get("API_TIMEOUT", 10),
-                api_keys=get_all_api_keys(app.config.get("COINGECKO_API_KEYS", [])),
+                api_keys=app.config.get("COINGECKO_API_KEYS", []),
             )
         except cg.CoinGeckoServiceError:
             trending = []
@@ -641,16 +638,12 @@ def register_routes(app: Flask) -> None:
                 if dup:
                     errors.append("Username sudah digunakan.")
 
-            v_email = V.validate_email(new_email)
-            if v_email:
-                errors.append(v_email.message)
-            else:
-                dup = db.session.query(User).filter(
-                    User.email == new_email,
-                    User.id != current_user.id,
-                ).first()
-                if dup:
-                    errors.append("Email sudah digunakan.")
+            dup = db.session.query(User).filter(
+                User.email == new_email,
+                User.id != current_user.id,
+            ).first()
+            if dup:
+                errors.append("Email sudah digunakan.")
 
             if errors:
                 for e in errors:
@@ -733,12 +726,9 @@ def register_routes(app: Flask) -> None:
             if db.session.query(User).filter_by(username=username).first():
                 errors.append("Username sudah digunakan.")
 
-        v_email = V.validate_email(email)
-        if v_email:
-            errors.append(v_email.message)
-        else:
-            if db.session.query(User).filter_by(email=email).first():
-                errors.append("Email sudah digunakan.")
+        # Email uniqueness check only (no format validation)
+        if db.session.query(User).filter_by(email=email).first():
+            errors.append("Email sudah digunakan.")
 
         v_pass = V.validate_password_register(password)
         if v_pass:
@@ -788,19 +778,26 @@ def register_routes(app: Flask) -> None:
                 if dup:
                     errors.append("Username sudah digunakan.")
 
-            v_email = V.validate_email(new_email)
-            if v_email:
-                errors.append(v_email.message)
-            else:
-                dup = db.session.query(User).filter(
-                    User.email == new_email, User.id != user_id
-                ).first()
-                if dup:
-                    errors.append("Email sudah digunakan.")
+            # Email uniqueness check only (no format validation)
+            dup = db.session.query(User).filter(
+                User.email == new_email, User.id != user_id
+            ).first()
+            if dup:
+                errors.append("Email sudah digunakan.")
 
             if errors:
                 for e in errors:
                     flash(e, "error")
+                return redirect(url_for("admin_edit_user", user_id=user_id))
+
+            # Proteksi: tidak bisa menurunkan hak admin diri sendiri
+            if user.is_admin and not make_admin and user.id == current_user.id:
+                flash("Tidak dapat menurunkan hak admin akun sendiri.", "error")
+                return redirect(url_for("admin_edit_user", user_id=user_id))
+
+            # Proteksi: tidak bisa menurunkan admin terakhir
+            if user.is_admin and not make_admin and count_active_admins() <= 1:
+                flash("Admin terakhir tidak dapat diturunkan.", "error")
                 return redirect(url_for("admin_edit_user", user_id=user_id))
 
             user.username = new_username
@@ -845,6 +842,9 @@ def register_routes(app: Flask) -> None:
         user = db.session.get(User, user_id)
         if not user:
             flash("User tidak ditemukan.", "error")
+            return redirect(url_for("admin"))
+        if user.is_approved:
+            flash("User yang sudah disetujui tidak dapat ditolak.", "error")
             return redirect(url_for("admin"))
         if user.is_admin:
             flash("Tidak dapat menolak admin.", "error")
@@ -911,60 +911,6 @@ def register_routes(app: Flask) -> None:
             flash("Gagal menghapus user.", "error")
         return redirect(url_for("admin"))
 
-    # ── API Key Management ──────────────────────────────────
-    @app.route("/admin/api-keys", methods=["GET"])
-    @admin_required
-    def admin_api_keys():
-        """Tampilkan daftar API key yang aktif."""
-        config_keys = [k for k in app.config.get("COINGECKO_API_KEYS", []) if k]
-        runtime_keys = _load_runtime_keys()
-        all_keys = config_keys + runtime_keys
-        # Mask keys for display
-        def mask(key: str) -> str:
-            if len(key) <= 8:
-                return "***"
-            return key[:4] + "***" + key[-4:]
-        return render_template(
-            "admin_api_keys.html",
-            config_keys=config_keys,
-            runtime_keys=runtime_keys,
-            all_keys=all_keys,
-            mask_key=mask,
-        )
-
-    @app.route("/admin/api-keys/add", methods=["POST"])
-    @admin_required
-    def admin_api_keys_add():
-        """Tambah API key baru via form."""
-        new_key = request.form.get("api_key", "").strip()
-        if not new_key:
-            flash("API key tidak boleh kosong.", "error")
-            return redirect(url_for("admin_api_keys"))
-        if len(new_key) < 10:
-            flash("API key terlalu pendek.", "error")
-            return redirect(url_for("admin_api_keys"))
-        all_keys = _load_runtime_keys()
-        if new_key in all_keys:
-            flash("API key sudah ada.", "warning")
-            return redirect(url_for("admin_api_keys"))
-        all_keys.append(new_key)
-        _save_runtime_keys(all_keys)
-        flash(f"API key ditambahkan.", "success")
-        return redirect(url_for("admin_api_keys"))
-
-    @app.route("/admin/api-keys/remove/<path:key>", methods=["POST"])
-    @admin_required
-    def admin_api_keys_remove(key: str):
-        """Hapus API key dari runtime list."""
-        runtime_keys = _load_runtime_keys()
-        if key not in runtime_keys:
-            flash("API key tidak ditemukan.", "error")
-            return redirect(url_for("admin_api_keys"))
-        runtime_keys.remove(key)
-        _save_runtime_keys(runtime_keys)
-        flash("API key dihapus.", "success")
-        return redirect(url_for("admin_api_keys"))
-
 
 # ─── Run ────────────────────────────────────────────────────
 
@@ -984,10 +930,6 @@ if __name__ == "__main__":
             print("[ERROR] Username minimal 3 karakter.")
             return
         email = input("Email: ").strip().lower()
-        v = V.validate_email(email)
-        if v:
-            print(f"[ERROR] {v.message}")
-            return
         password = getpass.getpass("Password (min. 8 chars): ")
         if len(password) < 8:
             print("[ERROR] Password minimal 8 karakter.")

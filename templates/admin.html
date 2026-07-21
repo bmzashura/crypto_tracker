@@ -8,10 +8,7 @@
         <h1 class="page-title">Admin Dashboard</h1>
         <p class="page-subtitle">Manage user registrations and permissions</p>
     </div>
-    <div style="display: flex; gap: 8px;">
-        <a href="{{ url_for('admin_api_keys') }}" class="btn btn-secondary" style="text-decoration:none;">API Keys</a>
-        <button class="btn btn-primary" onclick="openCreateModal()">+ Create User</button>
-    </div>
+    <button class="btn btn-primary" onclick="openCreateModal()">+ Create User</button>
 </div>
 
 {# ---- STATS ---- #}

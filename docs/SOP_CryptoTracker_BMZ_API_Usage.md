@@ -34,7 +34,7 @@ https://api.coingecko.com/api/v3
 ```
 
 ### API Key
-Demo key: `REMOVED_API_KEY`
+Demo key: `CG-your_api_key_here`
 
 ### Endpoints yang Digunakan
 
