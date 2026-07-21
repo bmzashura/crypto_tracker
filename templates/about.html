@@ -5,7 +5,7 @@
 {% block content %}
 <div class="about-content">
     <h1>About CryptoTracker BMZ</h1>
-    <p>A cryptocurrency price tracking web application built with Flask, featuring real-time market data, user authentication with admin approval system, watchlist management, and machine learning-based price prediction.</p>
+    <p>A cryptocurrency price tracking web application built with Flask, featuring real-time market data from CoinGecko API, user authentication with admin approval system, watchlist management, and machine learning-based price analysis using 4 indicators.</p>
 
     <h2><i data-lucide="user" class="section-icon"></i>Student Information</h2>
     <ul>
@@ -16,39 +16,85 @@
 
     <h2><i data-lucide="sparkles" class="section-icon"></i>Features</h2>
     <ul>
-        <li><strong>Live Market Data</strong> -- Real-time cryptocurrency prices from CoinGecko API</li>
-        <li><strong>Market Overview</strong> -- Total market cap, 24h volume, BTC dominance, active cryptocurrencies</li>
-        <li><strong>Trending Coins</strong> -- Top 7 trending cryptocurrencies</li>
-        <li><strong>Price Charts</strong> -- Interactive 7D / 30D / 90D price history charts (Chart.js)</li>
-        <li><strong>Search</strong> -- Find any cryptocurrency by name or symbol</li>
-        <li><strong>User Authentication</strong> -- Secure register/login with password hashing (pbkdf2:sha256)</li>
-        <li><strong>Admin Approval System</strong> -- New users require admin approval before login</li>
-        <li><strong>Watchlist</strong> -- Save favorite coins with heart icon</li>
-        <li><strong>Price Prediction</strong> -- Linear Regression ML model predicting 7-day price trends</li>
-        <li><strong>Signal Filter</strong> -- Filter coins by BUY/SELL/HOLD/STRONG BUY/STRONG SELL (logged-in users)</li>
-        <li><strong>Dark / Light Mode</strong> -- Toggle theme with session persistence</li>
-        <li><strong>Toast Notifications</strong> -- Floating alerts with auto-dismiss</li>
-        <li><strong>Responsive Design</strong> -- Works on desktop and mobile</li>
+        <li><strong>Live Market Data</strong> — Real-time cryptocurrency prices from CoinGecko API with 2-minute cache</li>
+        <li><strong>Market Overview</strong> — Total market cap, 24h volume, BTC dominance, active cryptocurrencies</li>
+        <li><strong>Trending Coins</strong> — Top 7 trending cryptocurrencies from CoinGecko</li>
+        <li><strong>Price Charts</strong> — Interactive 7D / 30D / 90D price history charts with SMA-7, SMA-30, Bollinger Bands overlays</li>
+        <li><strong>Search</strong> — Find any cryptocurrency by name or symbol</li>
+        <li><strong>User Authentication</strong> — Secure register/login with password hashing PBKDF2-SHA256</li>
+        <li><strong>Admin Approval System</strong> — New users require admin approval before login</li>
+        <li><strong>Watchlist</strong> — Save favorite coins with heart icon (logged-in users)</li>
+        <li><strong>Machine Learning Signals</strong> — 4 indicators: Linear Regression, RSI, SMA Crossover, Bollinger Bands</li>
+        <li><strong>Overall Signal</strong> — Combined BUY/SELL/HOLD/STRONG BUY/STRONG SELL with confidence score</li>
+        <li><strong>Dark / Light Mode</strong> — Toggle theme with session persistence</li>
+        <li><strong>Toast Notifications</strong> — Floating alerts with auto-dismiss</li>
+        <li><strong>Responsive Design</strong> — Works on desktop and mobile</li>
     </ul>
 
-    <h2><i data-lucide="brain" class="section-icon"></i>Machine Learning -- Linear Regression Price Prediction</h2>
-    <p>This app uses <strong>Simple Linear Regression</strong> to forecast cryptocurrency prices based on historical data.</p>
+    <h2><i data-lucide="brain" class="section-icon"></i>Machine Learning — 4 Indicators</h2>
+    <p>This app uses <strong>4 ML indicators</strong> to analyze cryptocurrency price trends and generate trading signals.</p>
 
-    <h3>How It Works</h3>
+    <h3>1. Linear Regression — 7-Day Price Prediction</h3>
+    <p>Uses <strong>Simple Linear Regression</strong> to forecast prices 7 days ahead based on 30 days of historical data.</p>
     <ol>
-        <li><strong>Data Collection</strong> -- Collects 30 days of daily price history from CoinGecko API</li>
-        <li><strong>Model Training</strong> -- Fits a Linear Regression model: <code>y = mx + c</code>
+        <li><strong>Data Collection</strong> — Collects 30 days of daily price history from CoinGecko API</li>
+        <li><strong>Model Training</strong> — Fits a Linear Regression model: <code>y = mx + c</code>
             <ul>
                 <li><code>x</code> = day index (0, 1, 2, ..., 29)</li>
                 <li><code>y</code> = price in USD</li>
             </ul>
         </li>
-        <li><strong>Prediction</strong> -- Forecasts price at day <code>n + 7</code> (7 days ahead)</li>
-        <li><strong>Signal Generation</strong> -- Classifies as STRONG BUY / BUY / HOLD / SELL / STRONG SELL based on predicted change %</li>
-        <li><strong>Confidence Level</strong> -- Based on R^2 score (coefficient of determination)</li>
+        <li><strong>Prediction</strong> — Forecasts price at day <code>n + 7</code> (7 days ahead)</li>
+        <li><strong>Signal Generation</strong> — Classifies as STRONG BUY / BUY / HOLD / SELL / STRONG SELL based on predicted change %</li>
+        <li><strong>Confidence Level</strong> — Based on R² score (coefficient of determination)</li>
     </ol>
 
-    <h3>Signal Classification (Predicted Change %)</h3>
+    <h3>2. RSI (Relative Strength Index)</h3>
+    <p>Momentum oscillator measuring speed and change of price movements (0-100).</p>
+    <table class="about-table">
+        <thead>
+            <tr><th>RSI Value</th><th>Interpretation</th><th>Signal</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>RSI &gt; 70</td><td>Overbought — potential sell signal</td><td>SELL</td></tr>
+            <tr><td>RSI &lt; 30</td><td>Oversold — potential buy signal</td><td>BUY</td></tr>
+            <tr><td>30 - 70</td><td>Neutral zone</td><td>HOLD</td></tr>
+        </tbody>
+    </table>
+
+    <h3>3. SMA Crossover (Simple Moving Average)</h3>
+    <p>Compares short-term vs long-term trend using two SMAs:</p>
+    <ul>
+        <li><strong>SMA-7</strong> — 7-day simple moving average (short-term)</li>
+        <li><strong>SMA-30</strong> — 30-day simple moving average (long-term)</li>
+    </ul>
+    <table class="about-table">
+        <thead>
+            <tr><th>Condition</th><th>Signal</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>SMA-7 &gt; SMA-30 (golden cross)</td><td>BULLISH</td></tr>
+            <tr><td>SMA-7 &lt; SMA-30 (death cross)</td><td>BEARISH</td></tr>
+        </tbody>
+    </table>
+
+    <h3>4. Bollinger Bands</h3>
+    <p>Volatility bands placed above and below a moving average (middle band = 20-day SMA).</p>
+    <table class="about-table">
+        <thead>
+            <tr><th>Price Position</th><th>Signal</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Price near lower band</td><td>BUY (oversold)</td></tr>
+            <tr><td>Price near middle band</td><td>HOLD</td></tr>
+            <tr><td>Price near upper band</td><td>SELL (overbought)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Overall Signal Classification</h3>
+    <p>The overall signal on the coin detail page is a combination of all 4 indicators:</p>
+
+    <h4>Combined Signal (Linear Regression)</h4>
     <table class="about-table">
         <thead>
             <tr><th>Predicted Change (7 days)</th><th>Signal</th><th>Icon</th></tr>
@@ -61,12 +107,12 @@
             <tr><td>&lt; -10%</td><td>STRONG SELL</td><td>trending-down</td></tr>
         </tbody>
     </table>
-    <p><strong>Note:</strong> If R^2 &lt; 0.3, signal is always HOLD (low confidence).</p>
+    <p><strong>Note:</strong> If R² &lt; 0.3, signal is always HOLD (low confidence).</p>
 
-    <h3>Confidence Levels (R^2 Score)</h3>
+    <h4>Confidence Levels (R² Score)</h4>
     <table class="about-table">
         <thead>
-            <tr><th>R^2 Score</th><th>Confidence</th><th>Meaning</th></tr>
+            <tr><th>R² Score</th><th>Confidence</th><th>Meaning</th></tr>
         </thead>
         <tbody>
             <tr><td>&gt; 0.7</td><td>High</td><td>Model fits data very well</td></tr>
@@ -75,29 +121,22 @@
         </tbody>
     </table>
 
-    <h3>R^2 Score Formula</h3>
-    <pre>R^2 = 1 - (SS_res / SS_tot)
-
-where:
-  SS_res = sum((y_actual - y_predicted)^2)  (residual sum of squares)
-  SS_tot = sum((y_actual - y_mean)^2)        (total sum of squares)</pre>
-
     <h3>Technologies Used</h3>
     <ul>
         <li><strong>Backend:</strong> Flask 3.0+, Python</li>
         <li><strong>Database:</strong> SQLite with Flask-SQLAlchemy</li>
-        <li><strong>Auth:</strong> Flask-Login, Werkzeug (pbkdf2:sha256)</li>
+        <li><strong>Auth:</strong> Flask-Login, Werkzeug password hashing PBKDF2-SHA256</li>
         <li><strong>ML:</strong> scikit-learn (LinearRegression), NumPy</li>
-        <li><strong>API:</strong> CoinGecko (free tier)</li>
-        <li><strong>Charts:</strong> Chart.js 4 (CDN)</li>
-        <li><strong>Icons:</strong> Lucide (SVG)</li>
+        <li><strong>API:</strong> CoinGecko (free tier + multi-key fallback)</li>
+        <li><strong>Charts:</strong> Chart.js 4.4 (CDN)</li>
+        <li><strong>Icons:</strong> Lucide Icons (SVG)</li>
         <li><strong>CSS:</strong> Custom CSS with CSS Variables (Dark/Light themes)</li>
     </ul>
 
     <h3>Limitations & Disclaimer</h3>
     <p><strong>Important:</strong> This prediction is for <strong>educational/demonstration purposes only</strong>.</p>
     <ul>
-        <li>Linear Regression assumes a linear relationship -- crypto markets are highly non-linear</li>
+        <li>Linear Regression assumes a linear relationship — crypto markets are highly non-linear</li>
         <li>The model does not incorporate external factors (news, sentiment, macroeconomic data)</li>
         <li>Cryptocurrency markets are extremely volatile and unpredictable</li>
         <li>Past performance does NOT guarantee future results</li>
@@ -123,8 +162,11 @@ Watchlist
     <h2><i data-lucide="code" class="section-icon"></i>Project Structure</h2>
     <pre>crypto_tracker/
 |-- app.py                  # Flask app, routes, ML prediction
-|-- ml_model.py             # ML functions (Linear Regression)
-|-- requirements.txt        # Dependencies
+|-- ml_model.py             # ML functions (Linear Regression, RSI, SMA, Bollinger)
+|-- config.py               # Config loader from .env
+|-- validators.py          # Input validation
+|-- requirements.txt       # Dependencies
+|-- .env.example           # Environment template
 |-- instance/
 |   |-- users.db           # SQLite database (auto-created)
 |-- docs/
@@ -133,96 +175,50 @@ Watchlist
 |   |-- API_DOCUMENTATION.md # Full API docs
 |-- templates/
 |   |-- base.html         # Layout + navbar + theme toggle
-|   |-- index.html        # Coin list + search + signal filter
-|   |-- detail.html       # Coin detail + chart + ML signal
+|   |-- index.html        # Coin list + search
+|   |-- detail.html       # Coin detail + chart + ML signals
+|   |-- market.html       # Market overview page
 |   |-- dashboard.html    # Watchlist + prediction
 |   |-- login.html
 |   |-- register.html
 |   |-- profile.html
 |   |-- change_password.html
 |   |-- admin.html        # Admin dashboard
+|   |-- admin_edit_user.html
+|   |-- error.html        # CSRF / error handler
 |   |-- about.html
 |-- static/css/style.css   # Light + Dark theme</pre>
 
     <h2><i data-lucide="link" class="section-icon"></i>API Documentation</h2>
     <p>This app uses two types of APIs:</p>
 
-    <h3>External -- CoinGecko API (Free Demo Tier)</h3>
+    <h3>External — CoinGecko API (Free Demo Tier)</h3>
     <p><strong>Base URL:</strong> <code>https://api.coingecko.com/api/v3</code></p>
-    <p><strong>API Key:</strong> <code>CG-your_api_key_here</code> (，来自 .env) </p>
+    <p><strong>API Key:</strong> Diisi dari file <code>.env</code> (opsional untuk free tier, diperlukan untuk rate limit yang lebih tinggi)</p>
+    <p>Daftar gratis di <a href="https://www.coingecko.com" target="_blank">coingecko.com</a>. Free tier: 30 requests/menit.</p>
 
-    <h3>GET /coins/markets</h3>
-    <p>Fetch market data for multiple coins</p>
-    <table class="about-table">
-        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-        <tbody>
-            <tr><td>vs_currency</td><td>string</td><td>usd</td><td>Currency (usd, eur, etc.)</td></tr>
-            <tr><td>order</td><td>string</td><td>market_cap_desc</td><td>Sort order</td></tr>
-            <tr><td>per_page</td><td>int</td><td>20</td><td>Results per page (max 250)</td></tr>
-            <tr><td>page</td><td>int</td><td>1</td><td>Page number</td></tr>
-            <tr><td>ids</td><td>string</td><td>--</td><td>Comma-separated coin IDs</td></tr>
-            <tr><td>sparkline</td><td>bool</td><td>false</td><td>Include sparkline</td></tr>
-        </tbody>
-    </table>
-
-    <h3>GET /coins/{id}</h3>
-    <p>Fetch detailed info for a specific coin</p>
-    <table class="about-table">
-        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-        <tbody>
-            <tr><td>localization</td><td>bool</td><td>false</td><td>Include localized languages</td></tr>
-            <tr><td>tickers</td><td>bool</td><td>false</td><td>Include tickers</td></tr>
-            <tr><td>community_data</td><td>bool</td><td>false</td><td>Include community stats</td></tr>
-            <tr><td>developer_data</td><td>bool</td><td>false</td><td>Include developer stats</td></tr>
-        </tbody>
-    </table>
-
-    <h3>GET /coins/{id}/market_chart</h3>
-    <p>Fetch price history for chart and ML prediction</p>
-    <table class="about-table">
-        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-        <tbody>
-            <tr><td>vs_currency</td><td>string</td><td>usd</td><td>Currency</td></tr>
-            <tr><td>days</td><td>int</td><td>7</td><td>Days of history (1, 7, 14, 30, 90, 180, 365)</td></tr>
-        </tbody>
-    </table>
-
-    <h3>GET /search</h3>
-    <p>Search for coins by name or symbol</p>
-    <table class="about-table">
-        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
-        <tbody>
-            <tr><td>query</td><td>string</td><td>Search term</td></tr>
-        </tbody>
-    </table>
-
-    <h3>GET /search/trending</h3>
-    <p>Fetch top 7 trending coins</p>
-    <p>No parameters required. Returns coins array with item: {id, name, symbol, thumb, market_cap_rank, price_btc}</p>
-
-    <h3>GET /global</h3>
-    <p>Fetch global market statistics</p>
-    <p>No parameters required. Returns: total_market_cap, total_volume, active_cryptocurrencies, market_cap_percentage</p>
-
-    <h3>Internal -- App Routes</h3>
+    <h3>Internal — App Routes</h3>
     <table class="about-table">
         <thead>
             <tr><th>Route</th><th>Method</th><th>Auth</th><th>Description</th></tr>
         </thead>
         <tbody>
             <tr><td>/</td><td>GET</td><td>Public</td><td>Homepage (coin list + search)</td></tr>
-            <tr><td>/coin/{id}</td><td>GET</td><td>Public</td><td>Coin detail + price chart</td></tr>
+            <tr><td>/market</td><td>GET</td><td>Public</td><td>Market overview (global stats)</td></tr>
+            <tr><td>/coin/{id}</td><td>GET</td><td>Public</td><td>Coin detail + price chart + ML signals</td></tr>
             <tr><td>/about</td><td>GET</td><td>Public</td><td>About page</td></tr>
             <tr><td>/register</td><td>GET/POST</td><td>Public</td><td>User registration (pending approval)</td></tr>
             <tr><td>/login</td><td>GET/POST</td><td>Public</td><td>User login (requires approval)</td></tr>
             <tr><td>/logout</td><td>GET</td><td>Required</td><td>Clear session</td></tr>
-            <tr><td>/dashboard</td><td>GET</td><td>Required</td><td>Watchlist + prediction</td></tr>
+            <tr><td>/dashboard</td><td>GET</td><td>Required</td><td>Watchlist + prediction + trending</td></tr>
             <tr><td>/profile</td><td>GET/POST</td><td>Required</td><td>Edit profile</td></tr>
             <tr><td>/change-password</td><td>GET/POST</td><td>Required</td><td>Change password</td></tr>
             <tr><td>/watchlist/add/{id}</td><td>POST</td><td>Required</td><td>Add to watchlist</td></tr>
             <tr><td>/watchlist/remove/{id}</td><td>POST</td><td>Required</td><td>Remove from watchlist</td></tr>
             <tr><td>/theme</td><td>GET</td><td>Public</td><td>Toggle dark/light mode</td></tr>
             <tr><td>/admin</td><td>GET</td><td>Admin</td><td>Admin dashboard</td></tr>
+            <tr><td>/admin/create-user</td><td>POST</td><td>Admin</td><td>Create user directly</td></tr>
+            <tr><td>/admin/edit-user/{id}</td><td>GET/POST</td><td>Admin</td><td>Edit user profile</td></tr>
             <tr><td>/admin/approve/{id}</td><td>POST</td><td>Admin</td><td>Approve pending user</td></tr>
             <tr><td>/admin/reject/{id}</td><td>POST</td><td>Admin</td><td>Reject/delete pending user</td></tr>
             <tr><td>/admin/toggle-admin/{id}</td><td>POST</td><td>Admin</td><td>Promote/demote admin</td></tr>
